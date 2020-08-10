@@ -210,7 +210,7 @@ ggplot(SD_tracts,
 
 ## Representing a continuous and a categorical variable with position
 
-So far, we've only been representing continuous variables on the x and y scales (or the $\theta and r scales). What happens if we try a continuous variable?
+So far, we've only been representing continuous variables on the x and y scales (or the $\theta$ and r scales). What happens if we try a continuous variable?
 
 ```{r}
 ggplot(SD_tracts, 
