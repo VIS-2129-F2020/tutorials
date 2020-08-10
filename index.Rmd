@@ -10,12 +10,12 @@ output:
     toc_float: true
 ---
 
-For each week's assignment, I've posted (or will have posted) a video tutorial and a written tutorial here. Since R is a script-based program, the written tutorials will often be sufficient, but the video tutorials may be useful to you as you begin to familiarize yourself with the RStudio interface.
+For each week's assignment, I've posted (or will have posted) a video tutorial and a written tutorial here. Since R is a script-based program, the written tutorials will often be sufficient for assignments that will be completed in R (most assignments), but the video tutorials may be useful to you as you begin to familiarize yourself with the RStudio interface.
 
 ## Week 2: Relationships and distributions
 
-[Written tutorial](https://gds-ses-5215.github.io/tutorials/Week2)
+[Written tutorial](https://vis-2129-f2020.github.io/tutorials/Week2)
 
 ## Week 3: Projections and distortions
 
-[Written tutorial](https://gds-ses-5215.github.io/tutorials/Week3)
+[Written tutorial](https://vis-2129-f2020.github.io/tutorials/Week3)

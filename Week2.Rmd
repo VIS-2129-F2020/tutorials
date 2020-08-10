@@ -188,7 +188,7 @@ ggplot(SD_tracts,
   theme_bw() 
 ```
 
-While we're messing around with scales, let's mess with the coordinate system as well. How would that scatterplot look with a polar coordinate system? This isn't a great application of a polar coordinate sytem (they make the most sense with unordered or cyclical data), but here's how you would do it:
+While we're messing around with scales, let's mess with the coordinate system as well. How would that scatterplot look with a polar coordinate system? This isn't a great application of a polar coordinate system (they make the most sense with unordered or cyclical data), but here's how you would do it:
 
 ```{r}
 ggplot(SD_tracts, 
