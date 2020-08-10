@@ -1,0 +1,275 @@
+---
+title: "Week 3: Projections and distortions"
+author: "Carole Voulgaris"
+date: "9/16/2020"
+output: 
+  html_document:
+    theme: cosmo
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This assignment is meant to just get you comfortable creating basic maps in R. In addition to this tutorial, you'll also find it helpful to work through [this excellent tutorial](https://www.r-spatial.org/r/2018/10/25/ggplot2-sf.html){target="_blank"} created by Mel Moreno and Mathieu Basille. 
+
+## Loading data
+
+There are many different sources of spatial data you can view and analyze within R. The `rnaturalearth` package is a good source for country-level (and some state-level) data throughout the world. 
+
+*Note: Many countries and territories in the world have contested borders. I am not necessarily endorsing the borders defined by the rnaturalearth package.*
+
+``` {r load libraries, results = "hide", message = FALSE, warning = FALSE}
+library(ggplot2)
+library(sf)
+library(rnaturalearth)
+library(tidyverse)
+library(ggspatial)
+library(cartogram)
+library(ggthemes)
+```
+
+### World map
+
+Let's start by drawing a quick map of the world.
+
+``` {r world map}
+world <- ne_countries(scale = 50, returnclass = "sf") 
+
+world_map <- ggplot(world) +
+  geom_sf() +
+  theme_bw()
+
+world_map
+```
+
+### Countries in South America
+
+Now let's do a map of just countries in South America.
+
+``` {r South America map}
+sa_countries <- world %>%
+  filter(continent == "South America")
+
+sa_map <- ggplot(sa_countries) +
+  geom_sf() + 
+  theme_bw()
+
+sa_map
+```
+
+### Provinces in China
+
+Now let's do a map of provinces in China. Before you run code with the ne_states() function, you'll need to install the latest version of the rnaturalearthhires package by typing this line into your console: 
+
+`devtools::install_github("ropensci/rnaturalearthhires")`
+
+```{r}
+china_provincies <- ne_states(country = "China", returnclass = "sf")
+
+china_map <- ggplot(china_provincies) +
+  geom_sf() +
+  theme_bw()
+
+china_map
+```
+
+### States in India
+
+We can use the same process to get a map of states in India.
+
+```{r}
+india_states <- ne_states(country = "India", returnclass = "sf")
+
+india_map <- ggplot(india_states) +
+  geom_sf() +
+  theme_bw()
+
+india_map
+```
+
+### States in the United States
+
+Now let's do a map of states in the United States. With apologies to those who are not from the mainland, I'm going to exclude Alaska and Hawaii, and all territories that aren't states.
+
+```{r}
+US_states <- ne_states(country = "United States of America", 
+                       returnclass = "sf") %>%
+  filter(name != "Alaska",
+         name != "Hawaii")
+
+US_map <- ggplot(US_states) +
+  geom_sf() +
+  theme_bw()
+
+US_map
+```
+
+## Reprojecting map data
+
+All of the above maps might look weird to you, depending on how far north or south they extend and how familiar you are with the places the represent. They're shown using an "equirectangular" projection, meaning one degree longitude is consistently represent the same distance (so longitude lines are parallel).
+
+In fact, one degree longitude is about 69 miles at the equator, and this distance changes as you move north and south (one degree latitude is about 54.6 miles everywhere). So these maps might be pretty distorted. That's why you'll get a warning when you try to add a scale bar to one of these maps.
+
+``` {r scale bar fail}
+china_map +
+  annotation_scale()
+```
+  
+Map projections aren't just about aesthetics or even about accuracy. They can reflect and reinforce political and social biases, as [this clip](https://www.youtube.com/watch_popup?v=vVX-PrBRtTY){target="_blank"} from the television show West Wing explains. 
+  
+We can fix this using `coord_sf()` to change the way `ggplot()` displays the data. This will not edit the data in the underlying map (coordinates are still stored as latitude/longitude).
+
+You can search for an appropriate coordinate reference system [here](https://spatialreference.org/){target="_blank"}. You can also find several that are meant for world maps [here](https://proj.org/operations/projections/index.html){target="_blank"}.
+
+Here are some options for the United States.
+
+``` {r define crs options}
+
+#United States
+USA_AEA <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=clrk66 +units=m +no_defs"
+MA_state_plane <- "+proj=lcc +lat_1=41.71666666666667 +lat_2=42.68333333333333 +lat_0=41 +lon_0=-71.5 +x_0=200000 +y_0=750000 +ellps=GRS80 +units=m +no_defs"
+WA_state_plane <- "+proj=lcc +lat_1=47.5 +lat_2=48.73333333333333 +lat_0=47 +lon_0=-120.8333333333333 +x_0=500000 +y_0=0 +ellps=GRS80 +units=m +no_defs"
+```
+
+And here is how the United States looks in each of those three projections:
+
+``` {r united states projections}
+ggplot(US_states) +
+  geom_sf() +
+  coord_sf(crs = USA_AEA) +
+  theme_bw()
+
+ggplot(US_states) +
+  geom_sf() +
+  coord_sf(crs = MA_state_plane) +
+  theme_bw()
+
+ggplot(US_states) +
+  geom_sf() +
+  coord_sf(crs = WA_state_plane) +
+  theme_bw()
+```
+
+## Transforming coordinate systems
+
+Sometimes just displaying the data in a different coordinate system isn't enough. If your analysis involved calculating areas and distances, you actually need the data to be stored in a projected coordinate system, where coordinates are in feet or meters rather than degrees latitude and longitude. To do this, you'll need to transform your data using `st_transform()`.
+
+``` {r transform United States}
+states_transformed <- US_states %>%
+  st_transform(crs = USA_AEA)
+```
+
+Now I have two versions of the the state boundaries. `states_transformed` is storing the coordinates in meters (projected to the Albers Equal Area projection) and `US_states` is still storing the boundaries in degrees latitude and longitude. If I plot `states_transformed`, without reprojecting with `coord_sf()`, it will show up in its projected coordinate system.
+
+``` {r show US again}
+ggplot(states_transformed) +
+  geom_sf() +
+  theme_bw()
+```
+
+## Chloropleth map
+
+The rnaturalearth package includes GDP and population estimates for countries. I have some questions about the recency/accuracy of those data, but feel free to use them for your assignment. 
+
+For state-level data, you'd need to find that on your own and join it to your state-level data. For example, I've downloaded [a file with state-level data on COVID-19 from John Hopkins University's Center for Systems Science and Engineering](https://github.com/CSSEGISandData/COVID-19/blob/master/csse_covid_19_data/csse_covid_19_daily_reports_us/08-06-2020.csv){target="_blank"} that I can join to my `US_states` dataframe.
+
+I'm also going to derive the population from that data. This incident rate is the number of cases per 100,000 people, so the population would be the number of cases times 100,000, divided by the incident rate.
+
+``` {r, message = FALSE}
+covid_us <- read_csv("csse_covid_19_daily_reports_us_08-06-2020.csv")
+
+covid_states <-states_transformed %>%
+  left_join(covid_us, by = c("name" = "Province_State")) %>%
+  mutate(pop = 100000 * Confirmed / Incident_Rate) %>%
+  select(name, pop, Confirmed, Deaths, Recovered, Active)
+```
+
+Now I can create a map map of the United States that shows the number of confirmed COVID cases in each state.
+
+``` {r}
+ggplot(covid_states, aes(fill = Confirmed)) +
+  geom_sf(color = NA) +
+  scale_fill_viridis_c(
+    name = "Number of\nconfirmed\nCOVID-19\ncases as of\nAugust 6, 2020",
+    breaks = seq(100000, 500000, by = 100000),
+    labels = formatC(seq(100000, 500000, by = 100000), 
+                     big.mark = ",", format = "f", digits = 0)) +
+  theme_map() +
+  theme(legend.background = element_blank())
+```
+
+A map like that can give the impression that the vast majority of Americans live in states with few COVID cases. We can use the `cartogram` package to distort the sizes of states to be more proportionate to their populations.
+
+A continuous cartogram will distort the shapes of the states in order not to create gaps between them.
+
+```{r, message = FALSE}
+covid_cartogram_cont <- covid_states %>%
+  cartogram_cont("pop")
+
+ggplot(covid_cartogram_cont, aes(fill = Active)) +
+  geom_sf(color = NA) +
+  scale_fill_viridis_c(
+    name = "Number of confirmed\nCOVID-19 cases\nas of August 6, 2020",
+    breaks = seq(100000, 500000, by = 100000),
+    labels = formatC(seq(100000, 500000, by = 100000), 
+                     big.mark = ",", format = "f", digits = 0)) +
+  theme_map() +
+  theme(legend.background = element_blank())
+```
+
+A non-continuous cartogram will maintain the shapes and relative positions of states.
+
+```{r, message = FALSE}
+covid_cartogram_ncont <- covid_states %>%
+  cartogram_ncont("pop")
+
+ggplot(covid_cartogram_ncont, aes(fill = Active)) +
+  geom_sf(color = NA) +
+  scale_fill_viridis_c(
+    name = "Number of\nconfirmed\nCOVID-19 cases\nas of August 6, 2020",
+    breaks = seq(100000, 500000, by = 100000),
+    labels = formatC(seq(100000, 500000, by = 100000), 
+                     big.mark = ",", format = "f", digits = 0)) +
+  theme_map() +
+  theme(legend.background = element_blank())
+```
+
+You can get even more abstract with a Dorling cartogram, which represents all areas as a circles, and minimizes gaps between them.
+
+```{r, message = FALSE}
+covid_cartogram_dorling <- covid_states %>%
+  cartogram_dorling("pop")
+
+ggplot(covid_cartogram_dorling, aes(fill = Active)) +
+  geom_sf(color = NA) +
+  scale_fill_viridis_c(
+    name = "Number of confirmed\nCOVID-19 cases\nas of August 6, 2020",
+    breaks = seq(100000, 500000, by = 100000),
+    labels = formatC(seq(100000, 500000, by = 100000), 
+                     big.mark = ",", format = "f", digits = 0)) +
+  theme_map() +
+  theme(legend.background = element_blank())
+```
+
+In the Dorling cartogram, the sizes of the circles represent population, and the colors represent the number of cases. Over the past six months, we've gotten used to seeing COVID-19 maps that represent numbers of cases with varying sizes of circles. This is called a proportionate symbol map. 
+
+``` {r, message=FALSE, warning=FALSE}
+covid_centeroids <- covid_states %>%
+  st_centroid()
+
+ggplot(states_transformed) +
+  geom_sf(fill = NA, color = "gray") +
+  geom_sf(data = covid_centeroids, 
+          aes(size = Confirmed),
+          alpha = 0.5, color = "red") +
+  scale_size_continuous(name = "Number of confirmed\nCOVID-19 cases as of\nAugust 6, 2020",
+    breaks = seq(100000, 500000, by = 100000),
+    labels = formatC(seq(100000, 500000, by = 100000), 
+                     big.mark = ",", format = "f", digits = 0),
+    range = c(0, 20)) +
+  theme_void() 
+```

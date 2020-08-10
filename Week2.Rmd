@@ -1,0 +1,381 @@
+---
+title: "Week 2: Relationships and distributions"
+author: "Carole Voulgaris"
+date: "9/9/2020"
+output: 
+  html_document:
+    theme: cosmo
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The `ggplot2` package is a set of really useful and flexible tools for visualizing both spatial and aspatial data. This tutorial focuses on aspatial data visualization, and we'll get into maps next week. The [ggplot2 cheat sheet](https://rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf){target="_blank"} gives a nice overview of options you can explore and play around with.
+
+We'll use census data to practice with. Those of you enrolled in GSD-SES-5215 used the `tidycensus` package for your Week 1 assignments. For those that aren't, you may find it helpful to review the tutorial for that assignment [here](https://gds-ses-5215.github.io/tutorials/Week1){target="_blank"}. The author of the `tidycensus` package has also put together some nice introductory materials on [basic usage of tidycensus](https://walker-data.com/tidycensus/articles/basic-usage.html){target="_blank"} and [spatial data in tidycensus](https://walker-data.com/tidycensus/articles/spatial-data.html){target="_blank"}.
+
+I'll be using the following libraries:
+
+``` {r load libraries, results = "hide", message = FALSE, warning = FALSE}
+library(ggplot2)
+library(tidyverse)
+library(tidycensus)
+```
+
+For these examples, I'm going to look at characteristics of census tracts in San Diego County, California. I'm interested in the following four variables:
+
+1. Whether the tract is urban or rural (categorical)
+2. The majority racial/ethnic identity (categorical)
+3. Average household size (continuous)
+4. The percent of households who live in rented homes (continuous)
+5. The population of the tract (continuous)
+6. The median age of residents (continuous)
+
+I'll get all my data from the 2010 census.
+
+```{r, message = FALSE}
+vars <- c(tot_hh = "H001001",
+         tot_rural_hh = "H002005",
+         tot_rent_hh = "H004004",
+         avg_hh_size = "H012001",
+         tot_pop = "P003001",
+         nh_white_pop = "P005003",
+         nh_black_pop = "P005004",
+         nh_asian_pop = "P005006",
+         hispanic_pop = "P005010",
+         med_age = "P013001")
+
+SD_tracts <- get_decennial(geography = "tract", variables = vars,
+                           state = "CA", county = "San Diego",
+                           output = "wide") %>%
+  mutate(rural = (tot_rural_hh == tot_hh) ,
+         pct_rental = tot_rent_hh / tot_hh,
+         majority_race_eth = case_when(
+           nh_white_pop / tot_pop > 0.5 ~ "nh_white",
+           nh_black_pop / tot_pop > 0.5 ~ "nh_black",
+           nh_asian_pop / tot_pop > 0.5 ~ "nh_asian",
+           hispanic_pop / tot_pop > 0.5 ~ "hispanic",
+           (nh_white_pop + nh_black_pop + nh_asian_pop + hispanic_pop) /
+             tot_pop < 0.5 ~ "other",
+           TRUE ~ "None")) %>%
+  filter(tot_pop > 0, tot_hh > 0) %>%
+  select(GEOID, rural, majority_race_eth, 
+         pct_rental, avg_hh_size, tot_pop, med_age) 
+```
+
+## Representing two continuous variables with position 
+
+You can represent a dataset in a (cartesian) scatter plot by mapping each variable onto one of the following attributes:
+
+* Position (x)
+* Position (y)
+* Hue
+* Saturation
+* Shape
+* Size
+
+So in theory, I could represent all six of my variables on one scatter plot. Just because I can doesn't mean I should, but let's see what it looks like.
+
+```{r}
+ggplot(SD_tracts, 
+       aes(x = pct_rental,
+           y = med_age,
+           size = tot_pop,
+           shape = rural,
+           color = majority_race_eth,
+           alpha = avg_hh_size)) +
+  geom_point() +
+  scale_size_continuous(name = "Tract population") +
+  scale_x_continuous(name = "Percent of households in rented homes",
+                     breaks = seq(0, 1, by = 0.1),
+                     labels = paste(seq(0, 100, by = 10), "%", sep = "")) +
+  scale_y_continuous(name = "Median age within tract",
+                     breaks = seq(10, 80, by = 10)) +
+  scale_color_discrete(name = "Majority race/ethnicity",
+                       labels = c("Hispanic",
+                                  "Non-Hispanic Asian",
+                                  "Non-Hispanic white",
+                                  "No majority")) +
+  scale_alpha_continuous(name = "Average household size in tract") +
+  scale_shape(name = element_blank(), 
+              labels = c("Urban tract", "Rural tract")) +
+  theme_bw() +
+  theme(legend.key.size = unit(0.1, "cm"))
+```
+
+That figure says so much that it doesn't say anything. It's unclear what the point of it is. Generally, the reason you would want to show multiple variables on a single figure is to to illustrate the relationships among them. With six variables on the figure, there are fifteen variable pairs, which is too many relationships to make sense of on one figure. 
+
+Let's simplify it to just show three variables.
+
+```{r}
+ggplot(SD_tracts, 
+       aes(x = pct_rental,
+           y = med_age,
+           color = majority_race_eth)) +
+  geom_point() +
+  scale_x_continuous(name = "Percent of households in rented homes",
+                     breaks = seq(0, 1, by = 0.1),
+                     labels = paste(seq(0, 100, by = 10), "%", sep = "")) +
+  scale_y_continuous(name = "Median age within tract",
+                     breaks = seq(10, 80, by = 10)) +
+  scale_color_discrete(name = "Majority race/ethnicity",
+                       labels = c("Hispanic",
+                                  "Non-Hispanic Asian",
+                                  "Non-Hispanic white",
+                                  "No majority")) +
+  theme_bw() 
+```
+
+Now the figure is telling a clearer story. It looks like tracts with younger populations are more more likely to have more renters, and that majority white tracts are generally older than majority Hispanic tracts. 
+
+Trendlines can make these relationships even clearer. I'm forcing the trendlines to be linear by setting `method = "lm"`.
+
+```{r}
+ggplot(SD_tracts, 
+       aes(x = pct_rental,
+           y = med_age,
+           color = majority_race_eth)) +
+  geom_point() +
+  stat_smooth(method = "lm", aes(fill = majority_race_eth)) +
+  scale_x_continuous(name = "Percent of households in rented homes",
+                     breaks = seq(0, 1, by = 0.1),
+                     labels = paste(seq(0, 100, by = 10), "%", sep = "")) +
+  scale_y_continuous(name = "Median age within tract",
+                     breaks = seq(10, 80, by = 10)) +
+  scale_color_discrete(name = "Majority race/ethnicity",
+                       labels = c("Hispanic",
+                                  "Non-Hispanic Asian",
+                                  "Non-Hispanic white",
+                                  "No majority")) +
+  scale_fill_discrete(name = "Majority race/ethnicity",
+                       labels = c("Hispanic",
+                                  "Non-Hispanic Asian",
+                                  "Non-Hispanic white",
+                                  "No majority")) +
+  theme_bw() 
+```
+
+Let's try another scatter plot to show the relationship between population and household size.
+
+```{r}
+ggplot(SD_tracts, 
+       aes(x = avg_hh_size,
+           y = tot_pop)) +
+  geom_point() +
+  stat_smooth(color = "black", linetype = 2, size = 0.5) +
+  scale_x_continuous(name = "Average household size") +
+  scale_y_continuous(name = "Tract population") +
+  theme_bw() 
+```
+
+The population values have a few very high values and a lot of lower values. Also, population tends to grow (and vary) exponentially. Those are some good reasons to use a logaritmic scale to show the variation in population.
+
+```{r}
+ggplot(SD_tracts, 
+       aes(x = avg_hh_size,
+           y = tot_pop)) +
+  geom_point() +
+  stat_smooth(color = "black", linetype = 2, size = 0.5) +
+  scale_x_continuous(name = "Average household size") +
+  scale_y_continuous(name = "Tract population",
+                     trans = "log",
+                     breaks = c(10, 100, 1000, 10000),
+                     labels = c("10", "100", "1,000", "10,000")) +
+  theme_bw() 
+```
+
+While we're messing around with scales, let's mess with the coordinate system as well. How would that scatterplot look with a polar coordinate system? This isn't a great application of a polar coordinate sytem (they make the most sense with unordered or cyclical data), but here's how you would do it:
+
+```{r}
+ggplot(SD_tracts, 
+       aes(x = avg_hh_size,
+           y = tot_pop)) +
+  geom_point(alpha = 0.5, size = 0.5) +
+  stat_smooth(color = "black", linetype = 2, size = 0.5) +
+  scale_x_continuous(name = "Average household size",
+                     labels = c("5 or 1", "1.5", "2", "2.5",
+                                "3", "3.5", "4", "4.5", "5"),
+                     breaks = seq(1, 5, by = 0.5)) +
+  scale_y_continuous(name = "Tract population",
+                     trans = "log",
+                     breaks = c(10, 100, 1000, 10000),
+                     labels = c("10", "100", "1,000", "10,000")) +
+  coord_polar(theta = "x") +
+  theme_bw() 
+```
+
+## Representing a continuous and a categorical variable with position
+
+So far, we've only been representing continuous variables on the x and y scales (or the $\theta and r scales). What happens if we try a continuous variable?
+
+```{r}
+ggplot(SD_tracts, 
+       aes(x = majority_race_eth,
+           y = med_age)) +
+  geom_point() +
+  scale_x_discrete(name = "Majority race/ethnicity",
+                       labels = c("Hispanic",
+                                  "Non-Hispanic Asian",
+                                  "Non-Hispanic white",
+                                  "No majority")) +
+  scale_y_continuous(name = "Median age within tract",
+                     breaks = seq(10, 80, by = 10)) +
+  theme_bw() 
+```
+
+Ummm... okay. It's not totally useless, but it could be better. First of all, you've got a lot of dots plotted right on top of each other. This comes up with continuous variables as well, and one way around it is to "jitter" the point positions, and to make the points smaller, and also more transparent. And maybe we can differntiate the categories by color as well as position on the x axis.
+
+```{r}
+ggplot(SD_tracts, 
+       aes(x = majority_race_eth,
+           y = med_age,
+           color = majority_race_eth)) +
+  geom_point(position = "jitter",
+             size = 0.5,
+             alpha = 0.5) +
+  scale_x_discrete(name = "Majority race/ethnicity",
+                       labels = c("Hispanic",
+                                  "Non-Hispanic Asian",
+                                  "Non-Hispanic white",
+                                  "No majority")) +
+  scale_y_continuous(name = "Median age within tract",
+                     breaks = seq(10, 80, by = 10)) +
+  theme_bw() +
+  theme(legend.position = "none")
+```
+
+Or, we could just replace the points with shapes that illustrate the overall distribution within each category. Like a box plot:
+
+```{r}
+ggplot(SD_tracts, 
+       aes(x = majority_race_eth,
+           y = med_age,
+           color = majority_race_eth)) +
+  geom_boxplot() +
+  scale_x_discrete(name = "Majority race/ethnicity",
+                       labels = c("Hispanic",
+                                  "Non-Hispanic Asian",
+                                  "Non-Hispanic white",
+                                  "No majority")) +
+  scale_y_continuous(name = "Median age within tract",
+                     breaks = seq(10, 80, by = 10)) +
+  theme_bw() +
+  theme(legend.position = "none")
+```
+
+Or a violin plot:
+
+```{r}
+ggplot(SD_tracts, 
+       aes(x = majority_race_eth,
+           y = med_age,
+           color = majority_race_eth)) +
+  geom_violin() +
+  scale_x_discrete(name = "Majority race/ethnicity",
+                       labels = c("Hispanic",
+                                  "Non-Hispanic Asian",
+                                  "Non-Hispanic white",
+                                  "No majority")) +
+  scale_y_continuous(name = "Median age within tract",
+                     breaks = seq(10, 80, by = 10)) +
+  theme_bw() +
+  theme(legend.position = "none")
+```
+
+Or a violin plot with a scatter plot on top of it:
+
+```{r}
+ggplot(SD_tracts, 
+       aes(x = majority_race_eth,
+           y = med_age,
+           color = majority_race_eth)) +
+  geom_violin() +
+  geom_point(position = "jitter",
+             alpha = 0.5,
+             size = 0.5) +
+  scale_x_discrete(name = "Majority race/ethnicity",
+                       labels = c("Hispanic",
+                                  "Non-Hispanic Asian",
+                                  "Non-Hispanic white",
+                                  "No majority")) +
+  scale_y_continuous(name = "Median age within tract",
+                     breaks = seq(10, 80, by = 10)) +
+  theme_bw() +
+  theme(legend.position = "none")
+```
+
+## Representing two continuous variables with position
+
+We can use a bar chart to show the distributions of two continuous variables.
+
+```{r}
+ggplot(SD_tracts, aes(x = majority_race_eth, fill = rural)) +
+  geom_bar() +
+  scale_y_continuous(name = "Number of tracts") +
+  scale_x_discrete(name = "Majority race/ethnicity",
+                       labels = c("Hispanic",
+                                  "Non-Hispanic\nAsian",
+                                  "Non-Hispanic\nwhite",
+                                  "No majority")) +
+  scale_fill_discrete(name = element_blank(),
+                        labels = c("Urban tracts",
+                                   "Rural tracts")) +
+  theme_bw() 
+```
+
+The default for `geom_bar()` is a stacked bar chart. Other options are "dodge" :
+
+```{r}
+ggplot(SD_tracts, aes(x = majority_race_eth, fill = rural)) +
+  geom_bar(position = "dodge") +
+  scale_y_continuous(name = "Number of tracts") +
+  scale_x_discrete(name = "Majority race/ethnicity",
+                       labels = c("Hispanic",
+                                  "Non-Hispanic\nAsian",
+                                  "Non-Hispanic\nwhite",
+                                  "No majority")) +
+  scale_fill_discrete(name = element_blank(),
+                        labels = c("Urban tracts",
+                                   "Rural tracts")) +
+  theme_bw() 
+```
+
+And fill:
+
+```{r}
+ggplot(SD_tracts, aes(x = majority_race_eth, fill = rural)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(name = "percent of tracts",
+                     breaks = seq(0, 1, by = 0.1),
+                     labels = paste(seq(0,100, by = 10), "%", sep ="")) +
+  scale_x_discrete(name = "Majority race/ethnicity",
+                       labels = c("Hispanic",
+                                  "Non-Hispanic\nAsian",
+                                  "Non-Hispanic\nwhite",
+                                  "No majority")) +
+  scale_fill_discrete(name = element_blank(),
+                        labels = c("Urban tracts",
+                                   "Rural tracts")) +
+  theme_bw() 
+```
+
+The creators of `ggplot2` don't like pie charts. If you disagree with them, you can hack a pie chart by wrapping a filled bar chart around a polar coordinate system.
+
+```{r}
+ggplot(SD_tracts, aes(x = 1, fill = majority_race_eth)) +
+  geom_bar(position = "fill") +
+  coord_polar(theta = "y") +
+  scale_y_continuous(name = "Number of tracts") +
+  scale_fill_discrete(name = "Majority race/ethnicity",
+                       labels = c("Hispanic",
+                                  "Non-Hispanic\nAsian",
+                                  "Non-Hispanic\nwhite",
+                                  "No majority")) +
+  theme_void() 
+```
+
+With those building blocks as a foundation, I hope you will continue to play and explore with the many combinations of geometries, aesthetics, coordinate systems, and scales you can use to create creative and informative data visualizations!
