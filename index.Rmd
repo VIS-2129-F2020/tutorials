@@ -1,0 +1,21 @@
+---
+title: "Assignment tutorials"
+author: "Carole Voulgaris"
+date: "9/3/2020"
+output: 
+  html_document:
+    theme: cosmo
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+For each week's assignment, I've posted (or will have posted) a video tutorial and a written tutorial here. Since R is a script-based program, the written tutorials will often be sufficient, but the video tutorials may be useful to you as you begin to familiarize yourself with the RStudio interface.
+
+## Week 2: Relationships and distributions
+
+[Written tutorial](https://gds-ses-5215.github.io/tutorials/Week2)
+
+## Week 3: Projections and distortions
+
+[Written tutorial](https://gds-ses-5215.github.io/tutorials/Week3)
