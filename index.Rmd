@@ -10,9 +10,11 @@ output:
     toc_float: true
 ---
 
-For each week's assignment, I've posted (or will have posted) a video tutorial and a written tutorial here. Since R is a script-based program, the written tutorials will often be sufficient for assignments that will be completed in R (most assignments), but the video tutorials may be useful to you as you begin to familiarize yourself with the RStudio interface.
+For each week's assignment, I've posted (or will have posted) one or more video tutorials and a written tutorial here. Since R is a script-based program, the written tutorials will often be sufficient for assignments that will be completed in R (most assignments), but the video tutorials may be useful to you as you begin to familiarize yourself with the RStudio interface.
 
 ## Week 2: Relationships and distributions
+
+[Video tutorial 1: Starting an R project from a GitHub repo](https://harvard.zoom.us/rec/play/6ZZ8f-ypqzs3G9DHtwSDBvN-W42_Kv2s1iEe-PZfz0u2BnYHMAKnbrUTMOFMF5vL7wloYpfsmqy2CQhB?startTime=1597255620000){target="_blank"}
 
 [Written tutorial](https://vis-2129-f2020.github.io/tutorials/Week2)
 
