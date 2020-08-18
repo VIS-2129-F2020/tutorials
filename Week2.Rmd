@@ -227,7 +227,7 @@ ggplot(SD_tracts,
   theme_bw() 
 ```
 
-Ummm... okay. It's not totally useless, but it could be better. First of all, you've got a lot of dots plotted right on top of each other. This comes up with continuous variables as well, and one way around it is to "jitter" the point positions, and to make the points smaller, and also more transparent. And maybe we can differntiate the categories by color as well as position on the x axis.
+Ummm... okay. It's not totally useless, but it could be better. First of all, you've got a lot of dots plotted right on top of each other. This comes up with continuous variables as well, and one way around it is to "jitter" the point positions, and to make the points smaller, and also more transparent. And maybe we can differentiate the categories by color as well as position on the x axis.
 
 ```{r}
 ggplot(SD_tracts, 
