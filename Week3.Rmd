@@ -202,7 +202,11 @@ ggplot(covid_states, aes(fill = Confirmed)) +
   theme(legend.background = element_blank())
 ```
 
+## Cartograms
+
 A map like that can give the impression that the vast majority of Americans live in states with few COVID cases. We can use the `cartogram` package to distort the sizes of states to be more proportionate to their populations.
+
+### Continuous cartogram
 
 A continuous cartogram will distort the shapes of the states in order not to create gaps between them.
 
@@ -221,6 +225,8 @@ ggplot(covid_cartogram_cont, aes(fill = Active)) +
   theme(legend.background = element_blank())
 ```
 
+### Non-continuous cartogram
+
 A non-continuous cartogram will maintain the shapes and relative positions of states.
 
 ```{r, message = FALSE}
@@ -238,6 +244,8 @@ ggplot(covid_cartogram_ncont, aes(fill = Active)) +
   theme(legend.background = element_blank())
 ```
 
+### Dorling cartogram
+
 You can get even more abstract with a Dorling cartogram, which represents all areas as a circles, and minimizes gaps between them.
 
 ```{r, message = FALSE}
@@ -254,6 +262,8 @@ ggplot(covid_cartogram_dorling, aes(fill = Active)) +
   theme_map() +
   theme(legend.background = element_blank())
 ```
+
+## Proportional symbol map
 
 In the Dorling cartogram, the sizes of the circles represent population, and the colors represent the number of cases. Over the past six months, we've gotten used to seeing COVID-19 maps that represent numbers of cases with varying sizes of circles. This is called a proportionate symbol map. 
 
