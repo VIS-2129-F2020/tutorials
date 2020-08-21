@@ -14,9 +14,17 @@ For each week's assignment, I've posted (or will have posted) one or more video 
 
 ## Week 2: Relationships and distributions
 
-[Video tutorial 1: Starting an R project from a GitHub repo](https://harvard.zoom.us/rec/play/6ZZ8f-ypqzs3G9DHtwSDBvN-W42_Kv2s1iEe-PZfz0u2BnYHMAKnbrUTMOFMF5vL7wloYpfsmqy2CQhB?startTime=1597255620000){target="_blank"}
+### Written tutorial
 
-[Written tutorial](https://vis-2129-f2020.github.io/tutorials/Week2)
+[ggplot2 and tidycensus packages](https://vis-2129-f2020.github.io/tutorials/Week2)
+
+### Video tutorials
+
+[Video tutorial 1: Installing Git, R, and RStudio (PC)](https://harvard.zoom.us/rec/share/5tZOLbb612BOHJ3g1xz2X_9-Jb7LT6a80HdP__BfxEvMfboEVuMLawEevGOMkjGY){target="_blank"}
+
+[Video tutorial 2: Installing Git, R, and RStudio (Mac)](https://harvard.zoom.us/rec/share/3fJfJaDXqUZOcq_ctVDTB7QdGoOmeaa803AYq_ZczhmRAfNlvwCqkZXzZAyU5x01?startTime=1597759465000){target="_blank"}
+
+[Video tutorial 3: Starting an R project from a GitHub repo](https://harvard.zoom.us/rec/play/6ZZ8f-ypqzs3G9DHtwSDBvN-W42_Kv2s1iEe-PZfz0u2BnYHMAKnbrUTMOFMF5vL7wloYpfsmqy2CQhB?startTime=1597255620000){target="_blank"}
 
 ## Week 3: Projections and distortions
 

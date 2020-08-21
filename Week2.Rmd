@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 The `ggplot2` package is a set of really useful and flexible tools for visualizing both spatial and aspatial data. This tutorial focuses on aspatial data visualization, and we'll get into maps next week. The [ggplot2 cheat sheet](https://rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf){target="_blank"} gives a nice overview of options you can explore and play around with.
 
-We'll use census data to practice with. Those of you enrolled in GSD-SES-5215 used the `tidycensus` package for your Week 1 assignments. For those that aren't, you may find it helpful to review the tutorial for that assignment [here](https://gds-ses-5215.github.io/tutorials/Week1){target="_blank"}. The author of the `tidycensus` package has also put together some nice introductory materials on [basic usage of tidycensus](https://walker-data.com/tidycensus/articles/basic-usage.html){target="_blank"} and [spatial data in tidycensus](https://walker-data.com/tidycensus/articles/spatial-data.html){target="_blank"}.
+We'll use census data to practice with. Those of you enrolled in GSD-SES-5215 may have used the `tidycensus` package for your Week 1 assignments. For those that aren't, you may find it helpful to review the tutorial for that assignment [here](https://gds-ses-5215.github.io/tutorials/Week1){target="_blank"}. The author of the `tidycensus` package has also put together some nice introductory materials on [basic usage of tidycensus](https://walker-data.com/tidycensus/articles/basic-usage.html){target="_blank"} and [spatial data in tidycensus](https://walker-data.com/tidycensus/articles/spatial-data.html){target="_blank"}.
 
 I'll be using the following libraries:
 
