@@ -16,7 +16,7 @@ For each week's assignment, I've posted (or will have posted) one or more video 
 
 ### Written tutorial
 
-[ggplot2 and tidycensus packages](https://vis-2129-f2020.github.io/tutorials/Week2)
+[Written tutorial: ggplot2 and tidycensus packages](https://vis-2129-f2020.github.io/tutorials/Week2)
 
 ### Video tutorials
 
@@ -28,4 +28,4 @@ For each week's assignment, I've posted (or will have posted) one or more video 
 
 ## Week 3: Projections and distortions
 
-[Written tutorial](https://vis-2129-f2020.github.io/tutorials/Week3)
+[Written tutorial: Projections, transformations, and cartograms](https://vis-2129-f2020.github.io/tutorials/Week3)
