@@ -378,4 +378,4 @@ ggplot(SD_tracts, aes(x = 1, fill = majority_race_eth)) +
   theme_void() 
 ```
 
-With these building blocks as a foundation, I hope you will continue to play and explore with the many combinations of geometries, aesthetics, coordinate systems, and scales you can use to create creative and informative data visualizations!
+With these building blocks as a foundation, I hope you will continue to play with and explore the many combinations of geometries, aesthetics, coordinate systems, and scales you can use to create creative and informative data visualizations!
