@@ -26,6 +26,10 @@ For each week's assignment, I've posted (or will have posted) one or more video 
 
 [Video tutorial 3: Starting an R project from a GitHub repo](https://harvard.zoom.us/rec/play/6ZZ8f-ypqzs3G9DHtwSDBvN-W42_Kv2s1iEe-PZfz0u2BnYHMAKnbrUTMOFMF5vL7wloYpfsmqy2CQhB?startTime=1597255620000){target="_blank"}
 
+[Video tutorial 4: Installing packages and finding data in tidycensus](https://harvard.zoom.us/rec/play/uMF7dbyhrjs3S4bH4wSDV_ArW43pf_is0SIe8_IJyUy0AXUCMFWnNLRGZBnHvZlAASFiVk9BmR0M0-Y){target="_blank"}
+
+[Video tutorial 7: Submitting an assignment on GitHub by creating an Issue](https://harvard.zoom.us/rec/share/tPZrKoHv3HhJSNLr5HjhWpQ6JLiiaaa80XMWrqAMzEasqM6unaAPJGYp0hGlENNg?startTime=1598978835000){target="_blank"}
+
 ## Week 3: Projections and distortions
 
 [Written tutorial: Projections, transformations, and cartograms](https://vis-2129-f2020.github.io/tutorials/Week3)
