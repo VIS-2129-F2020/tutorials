@@ -20,7 +20,7 @@ We'll use census data to practice with. Those of you enrolled in GSD-SES-5215 ma
 
 I'll be using the following libraries:
 
-``` {r load libraries, results = "hide", message = FALSE, warning = FALSE}
+``` {r load libraries, message=FALSE}
 library(ggplot2)
 library(tidyverse)
 library(tidycensus)
@@ -138,9 +138,10 @@ Trendlines can make these relationships even clearer. I'm forcing the trendlines
 ggplot(SD_tracts, 
        aes(x = pct_rental,
            y = med_age,
-           color = majority_race_eth)) +
+           color = majority_race_eth,
+           fill = majority_race_eth)) +
   geom_point() +
-  stat_smooth(method = "lm", aes(fill = majority_race_eth)) +
+  stat_smooth(method = "lm") +
   scale_x_continuous(name = "Percent of households in rented homes",
                      breaks = seq(0, 1, by = 0.1),
                      labels = paste(seq(0, 100, by = 10), "%", sep = "")) +
