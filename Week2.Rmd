@@ -26,7 +26,7 @@ library(tidyverse)
 library(tidycensus)
 ```
 
-For these examples, I'm going to look at characteristics of census tracts in San Diego County, California. I'm interested in the following four variables:
+For these examples, I'm going to look at characteristics of census tracts in San Diego County, California. I'm interested in the following six variables:
 
 1. Whether the tract is urban or rural (categorical)
 2. The majority racial/ethnic identity (categorical)
@@ -363,10 +363,10 @@ ggplot(SD_tracts, aes(x = majority_race_eth, fill = rural)) +
   theme_bw() 
 ```
 
-The creators of `ggplot2` don't like pie charts. If you disagree with them, you can hack together a pie chart by wrapping a filled bar chart around a polar coordinate system.
+The creators of `ggplot2` don't like pie charts. If you disagree with them, you can hack together a pie chart by wrapping a filled bar chart around a polar coordinate system. Also, for this last one, I'm going to save my plot to a variable called `pie_chart` and then print it by typing `pie_chart` below.
 
 ```{r}
-ggplot(SD_tracts, aes(x = 1, fill = majority_race_eth)) +
+pie_chart <- ggplot(SD_tracts, aes(x = 1, fill = majority_race_eth)) +
   geom_bar(position = "fill") +
   coord_polar(theta = "y") +
   scale_y_continuous(name = "Number of tracts") +
@@ -376,6 +376,20 @@ ggplot(SD_tracts, aes(x = 1, fill = majority_race_eth)) +
                                   "Non-Hispanic\nwhite",
                                   "No majority")) +
   theme_void() 
+
+pie_chart
 ```
 
 With these building blocks as a foundation, I hope you will continue to play with and explore the many combinations of geometries, aesthetics, coordinate systems, and scales you can use to create creative and informative data visualizations!
+
+## Post-script: Saving a figure as a PDF
+
+P.S. You might want to save your figure as a PDF so you can incorporate it into an InDesign layout or edit it further in Illustrator. Here's how you print your plot to a PDF instead of to the Markdown file (width and height are in inches). 
+
+The first line creates a PDF file, the next line prints your pie chart to that file, and the last line closes the file.
+
+``` {r}
+pdf("my_pie_chart.pdf", width = 3, height = 3) 
+pie_chart                    
+dev.off()                     
+```
