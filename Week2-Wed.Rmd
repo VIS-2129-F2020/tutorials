@@ -1,0 +1,350 @@
+---
+title: "Week 2, Wednesday Lecture Notes"
+author: "Carole Voulgaris"
+date: "9/9/2020"
+output: 
+  html_document:
+    theme: cosmo
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(ggplot2)
+
+data <- read_csv("dataset_vis.csv")
+time <- read_csv("time_data.csv")
+```
+
+## Sample dataset
+
+Here are the first few lines of a person-level dataset with five variables:
+
+* Gender
+* Employment status
+* Income
+* Population density within a mile of home
+* Daily vehicle miles traveled
+
+***
+
+``` {r, echo=FALSE}
+knitr::kable(data[1:7, ])
+```
+## Visualizing a continuous distribution
+
+Here are four alternative ways to visualize the distribution of income within the dataset. How might you interpret these differently?
+
+```{r, echo = FALSE}
+ggplot(data, aes(x = income)) +
+  geom_histogram(bins = 50, color = "gray") +
+  scale_x_continuous(name = "Annual household income",
+                     breaks = inc_breaks <- seq(0,350000, by = 50000),
+                     labels = paste("$", 
+                                    formatC(inc_breaks, 
+                                            format = "d",
+                                              big.mark = ","))) +
+  scale_y_continuous(name = "Number of people") +
+  theme_bw()
+```
+
+
+```{r, echo = FALSE}
+ggplot(data, aes(y = income)) +
+  geom_boxplot() +
+  scale_y_continuous(name = "Annual household income",
+                     breaks = inc_breaks <- seq(0,350000, by = 50000),
+                     labels = paste("$", 
+                                    formatC(inc_breaks, 
+                                            format = "d",
+                                              big.mark = ","))) +
+  theme_bw() +
+  theme(axis.text.x = element_blank())
+```
+
+```{r, echo = FALSE}
+ggplot(data, aes(x = income)) +
+  geom_freqpoly(bins = 100) +
+  scale_x_continuous(name = "Annual household income",
+                     breaks = inc_breaks <- seq(0,350000, by = 50000),
+                     labels = paste("$", 
+                                    formatC(inc_breaks, 
+                                            format = "d",
+                                              big.mark = ","))) +
+  theme_bw() 
+```
+
+```{r, echo = FALSE}
+ggplot(data, aes(x = 1, y = income)) +
+  geom_violin() +
+  scale_y_continuous(name = "Annual household income",
+                     breaks = inc_breaks <- seq(0,350000, by = 50000),
+                     labels = paste("$", 
+                                    formatC(inc_breaks, 
+                                            format = "d",
+                                              big.mark = ","))) +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.title.x.bottom = element_blank())
+```
+```{r, echo = FALSE}
+ggplot(data, aes(x = 1, y = income)) +
+  geom_jitter(alpha = 0.2, size = 0.3) +
+  scale_y_continuous(name = "Annual household income",
+                     breaks = inc_breaks <- seq(0,350000, by = 50000),
+                     labels = paste("$", 
+                                    formatC(inc_breaks, 
+                                            format = "d",
+                                              big.mark = ","))) +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.title.x.bottom = element_blank())
+```
+
+### Distributions of categorical variables
+
+Here are three ways to visualize the distribution of a categorical variable. How else could you visualize these distributions? Why might you choose one option or another? 
+
+```{r, echo = FALSE}
+ggplot(data, aes(x = 1, fill = employment)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(name = "Percent of population",
+                     breaks = seq(0, 1, by = 0.1),
+                     labels = paste(seq(0,100, by = 10), "%", sep = "")) +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.title.x.bottom = element_blank())
+```
+```{r, echo = FALSE}
+ggplot(data, aes(x = 1, fill = employment)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(name = "Percent of population",
+                     breaks = seq(0, 1, by = 0.1),
+                     labels = paste(seq(0,100, by = 10), "%", sep = "")) +
+  theme_void() +
+  coord_polar(theta = "y") 
+```
+```{r, echo = FALSE}
+ggplot(data, aes(x = employment)) +
+  geom_bar() +
+  scale_x_discrete(name = "Employment status") +
+  scale_y_continuous(name = "Number of people") +
+  theme_bw() 
+```
+
+## Relationships between continuous variables
+
+Here are some alternative representations of the relationship between VMT and income.
+
+```{r, echo = FALSE}
+ggplot(data, aes(x = VMT, y = income)) +
+  geom_point(alpha = 0.2, size = 0.3) +
+  scale_x_continuous(name = "Daily vehicle miles traveled") +
+  scale_y_continuous(name = "Annual household income",
+                     breaks = inc_breaks <- seq(0,350000, by = 50000),
+                     labels = paste("$", 
+                                    formatC(inc_breaks, 
+                                            format = "d",
+                                              big.mark = ","))) +
+  theme_bw() 
+```
+```{r, echo = FALSE}
+ggplot(data, aes(x = VMT, y = income)) +
+  geom_line() +
+  scale_x_continuous(name = "Daily vehicle miles traveled") +
+  scale_y_continuous(name = "Annual household income",
+                     breaks = inc_breaks <- seq(0,350000, by = 50000),
+                     labels = paste("$", 
+                                    formatC(inc_breaks, 
+                                            format = "d",
+                                              big.mark = ","))) +
+  theme_bw() 
+```
+
+```{r, echo = FALSE}
+ggplot(data, aes(x = VMT, y = income)) +
+  geom_point(alpha = 0.1, size = 0.3, color = "gray") +
+  stat_smooth(color = "black", method = 'gam', formula = y ~ s(x, bs = "cs")) +
+  scale_x_continuous(name = "Daily vehicle miles traveled") +
+  scale_y_continuous(name = "Annual household income",
+                     breaks = inc_breaks <- seq(0,350000, by = 50000),
+                     labels = paste("$", 
+                                    formatC(inc_breaks, 
+                                            format = "d",
+                                              big.mark = ","))) +
+  theme_bw() 
+```
+
+```{r, echo = FALSE}
+ggplot(data, aes(x = VMT, y = income)) +
+  geom_point(alpha = 0.1, size = 0.3, color = "gray") +
+  stat_smooth(color = "black", method = 'lm', formula = y ~ x) +
+  scale_x_continuous(name = "Daily vehicle miles traveled") +
+  scale_y_continuous(name = "Annual household income",
+                     breaks = inc_breaks <- seq(0,350000, by = 50000),
+                     labels = paste("$", 
+                                    formatC(inc_breaks, 
+                                            format = "d",
+                                              big.mark = ","))) +
+  theme_bw() 
+```
+
+```{r, echo = FALSE}
+ggplot(data, aes(x = income, y = VMT)) +
+  geom_point(alpha = 0.2, size = 0.3) +
+  scale_y_continuous(name = "Daily vehicle miles traveled") +
+  scale_x_continuous(name = "Annual household income",
+                     breaks = inc_breaks <- seq(0,350000, by = 50000),
+                     labels = paste("$", 
+                                    formatC(inc_breaks, 
+                                            format = "d",
+                                              big.mark = ","))) +
+  theme_bw() 
+```
+
+```{r, echo = FALSE}
+ggplot(data, aes(x = income, y = VMT)) +
+  geom_line(size = 0.1) +
+  scale_y_continuous(name = "Daily vehicle miles traveled") +
+  scale_x_continuous(name = "Annual household income",
+                     breaks = inc_breaks <- seq(0,350000, by = 50000),
+                     labels = paste("$", 
+                                    formatC(inc_breaks, 
+                                            format = "d",
+                                              big.mark = ","))) +
+  theme_bw() 
+```
+
+## Log scales and linear scale
+
+All of the above example show income on a linear scale. What if we showed it on a log scale?
+
+```{r, echo = FALSE}
+ggplot(data, aes(x = income)) +
+  geom_histogram(bins = 50, color = "gray") +
+  scale_x_continuous(name = "Annual household income",
+                     breaks = inc_breaks <- seq(0,350000, by = 50000),
+                     labels = paste("$", 
+                                    formatC(inc_breaks, 
+                                            format = "d",
+                                              big.mark = ","))) +
+  scale_y_continuous(name = "Number of people") +
+  theme_bw()
+```
+```{r, echo = FALSE}
+ggplot(data, aes(x = income)) +
+  geom_histogram(bins = 50, color = "gray") +
+  scale_x_continuous(name = "Annual household income",
+                     breaks = inc_breaks <- c(2000, 5000, 10000, 
+                                              20000, 50000, 100000,
+                                              200000, 500000),
+                     labels = paste("$", 
+                                    formatC(inc_breaks, 
+                                            format = "d",
+                                              big.mark = ",")),
+                     trans = "log") +
+  scale_y_continuous(name = "Number of people") +
+  theme_bw()
+```
+
+```{r, echo = FALSE}
+ggplot(data, aes(x = income, y = VMT)) +
+  geom_point(alpha = 0.2, size = 0.3) +
+  scale_y_continuous(name = "Daily vehicle miles traveled") +
+  scale_x_continuous(name = "Annual household income",
+                     breaks = inc_breaks <- seq(0,350000, by = 50000),
+                     labels = paste("$", 
+                                    formatC(inc_breaks, 
+                                            format = "d",
+                                              big.mark = ","))) +
+  theme_bw() 
+```
+
+```{r, echo = FALSE}
+ggplot(data, aes(x = income, y = VMT)) +
+  geom_point(alpha = 0.2, size = 0.3) +
+  scale_y_continuous(name = "Daily vehicle miles traveled") +
+  scale_x_continuous(name = "Annual household income",
+                     breaks = inc_breaks <- c(2000, 5000, 10000, 
+                                              20000, 50000, 100000,
+                                              200000, 500000),
+                     labels = paste("$", 
+                                    formatC(inc_breaks, 
+                                            format = "d",
+                                              big.mark = ",")),
+                     trans = "log") +
+  theme_bw() 
+```
+
+## Cartesian or Polar Coordinates?
+
+Let's look at some time-series data. Here are selected rows from a day-level dataset with five variables:
+
+* Number of day since we started measuring total vehicle miles traveled
+* Day of the week
+* Day of the week (as a number)
+* Week number
+* Million Vehicle Miles Traveled in the city that day
+
+***
+
+``` {r, echo=FALSE}
+knitr::kable(time[13:26, ])
+```
+Here are some graphs that shows how MVMT has changed over time.
+
+```{r, echo = FALSE}
+ggplot(time, aes(x = day_count, y = MVMT)) +
+  geom_point() +
+  scale_x_continuous(name = "Number of days since counts began",
+                     breaks= seq(0, 60, by = 5)) +
+  theme_bw()
+```
+```{r, echo = FALSE}
+ggplot(time, aes(x = day_count, y = MVMT)) +
+  geom_line() +
+  scale_x_continuous(name = "Number of days since counts began",
+                     breaks= seq(0, 60, by = 5)) +
+  theme_bw()
+```
+```{r, echo = FALSE}
+ggplot(time, aes(x = day_num, y = MVMT, color = as.character(Week))) +
+  geom_line() +
+  scale_x_continuous(name = "Day of the week",
+                     breaks = seq(1, 7, by=1),  
+                     labels = c("Sunday",
+                                "Monday",
+                                "Tuesday",
+                                "Wednesday",
+                                "Thursday",
+                                "Friday",
+                                "Saturday")) +
+  scale_color_viridis_d(name = "Week number") +
+  theme_bw()
+```
+
+A polar coordinate system is useful for showing cycles:
+
+```{r, echo = FALSE}
+ggplot(time, aes(x = day_num, y = MVMT, color = as.character(Week))) +
+  geom_line() +
+  scale_x_continuous(name = "Day of the week",
+                     breaks = seq(1, 7, by=1),  
+                     labels = c("Sunday",
+                                "Monday",
+                                "Tuesday",
+                                "Wednesday",
+                                "Thursday",
+                                "Friday",
+                                "Saturday")) +
+  scale_color_viridis_d(name = "Week number") +
+  coord_polar() +
+  theme_bw()
+```
+
+(Polar coodinates are also useful for pie charts)
+
