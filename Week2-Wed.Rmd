@@ -105,7 +105,7 @@ ggplot(data, aes(x = 1, y = income)) +
         axis.title.x.bottom = element_blank())
 ```
 
-### Distributions of categorical variables
+## Distributions of categorical variables
 
 Here are three ways to visualize the distribution of a categorical variable. How else could you visualize these distributions? Why might you choose one option or another? 
 
