@@ -36,6 +36,8 @@ For each week's assignment, I've posted (or will have posted) one or more video 
 
 [Video tutorial 7: Submitting an assignment on GitHub by creating an Issue](https://harvard.zoom.us/rec/share/tPZrKoHv3HhJSNLr5HjhWpQ6JLiiaaa80XMWrqAMzEasqM6unaAPJGYp0hGlENNg?startTime=1598978835000){target="_blank"}
 
+[Video tutorial 8: R and GIS to Illustrator workflow and ggthemes](https://harvard.zoom.us/rec/share/kRAGjneuqvVZRML2IyO-uQdwhlfqE3sQHHPeTha0ic8tomjRThYuq0fb8EsEWMC3.95xDP7PFoX82VPqp?startTime=1599829600000){target="_blank"}
+
 ## Week 3: Projections and distortions
 
 [Written tutorial: Projections, transformations, and cartograms](https://vis-2129-f2020.github.io/tutorials/Week3)
