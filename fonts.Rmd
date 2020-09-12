@@ -41,6 +41,7 @@ Now you can see a list of all the fonts that are available to you. Here's what I
 ```{r}
 fonts()
 ```
+Now I need to load these fonts using the function `loadfonts()`. If you are working on a Mac, you can leave leave the parentheses empty (i.e. delete `device = "win"`)
 
 ```{r, message=FALSE}
 loadfonts(device = "win")
