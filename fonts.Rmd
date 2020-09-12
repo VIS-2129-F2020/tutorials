@@ -57,7 +57,8 @@ Maybe you want to use different fonts for different text elements. No problem.
 
 ```{r}
 example_plot +
-  theme(title = element_text(family = "Copperplate Gothic Bold" ),
+  theme(plot.title = element_text(family = "Copperplate Gothic Bold",
+                             size = 20),
         axis.title = element_text(family = "Copperplate Gothic Light"),
         axis.text = element_text(family = "Calibri" ),
         legend.title = element_text(family = "Calibri", face = "bold"),

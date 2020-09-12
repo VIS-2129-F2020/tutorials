@@ -16,7 +16,9 @@ For each week's assignment, I've posted (or will have posted) one or more video 
 
 ### Written tutorial
 
-[Written tutorial: ggplot2 and tidycensus packages](https://vis-2129-f2020.github.io/tutorials/Week2)
+[Written tutorial: ggplot2 and tidycensus packages](https://vis-2129-f2020.github.io/tutorials/Week2){target="_blank"}
+
+[Bonus tutorial: Fonts](https://vis-2129-f2020.github.io/tutorials/fonts){target="_blank"}
 
 ### Video tutorials
 
