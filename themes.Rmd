@@ -1,0 +1,136 @@
+---
+title: "Week 2: Relationships and distributions"
+author: "Carole Voulgaris"
+date: "9/9/2020"
+output: 
+  html_document:
+    theme: architect
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Fun with ggthemes!
+
+``` {r load libraries, message=FALSE}
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(tidycensus)
+library(prettydoc)
+```
+
+
+
+```{r, message = FALSE, echo=FALSE}
+vars <- c(tot_hh = "H001001",
+         tot_rural_hh = "H002005",
+         tot_rent_hh = "H004004",
+         avg_hh_size = "H012001",
+         tot_pop = "P003001",
+         nh_white_pop = "P005003",
+         nh_black_pop = "P005004",
+         nh_asian_pop = "P005006",
+         hispanic_pop = "P005010",
+         med_age = "P013001")
+
+SD_tracts <- get_decennial(geography = "tract", variables = vars,
+                           state = "CA", county = "San Diego",
+                           output = "wide") %>%
+  mutate(rural = (tot_rural_hh == tot_hh) ,
+         pct_rental = tot_rent_hh / tot_hh,
+         majority_race_eth = case_when(
+           nh_white_pop / tot_pop > 0.5 ~ "nh_white",
+           nh_black_pop / tot_pop > 0.5 ~ "nh_black",
+           nh_asian_pop / tot_pop > 0.5 ~ "nh_asian",
+           hispanic_pop / tot_pop > 0.5 ~ "hispanic",
+           (nh_white_pop + nh_black_pop + nh_asian_pop + hispanic_pop) /
+             tot_pop < 0.5 ~ "other",
+           TRUE ~ "None")) %>%
+  filter(tot_pop > 0, tot_hh > 0) %>%
+  select(GEOID, rural, majority_race_eth, 
+         pct_rental, avg_hh_size, tot_pop, med_age) 
+```
+
+
+Here's a figure from the assignment tutorial:
+
+```{r}
+figure <- ggplot(SD_tracts, 
+                 aes(x = pct_rental,
+                     y = med_age,
+                     color = majority_race_eth)) +
+  geom_point() +
+  scale_x_continuous(name = "Percent of households in rented homes",
+                     breaks = seq(0, 1, by = 0.1),
+                     labels = paste(seq(0, 100, by = 10), "%", sep = "")) +
+  scale_y_continuous(name = "Median age within tract",
+                     breaks = seq(10, 80, by = 10)) +
+  scale_color_discrete(name = "Majority race",
+                       labels = c("Hispanic",
+                                  "Non-Hispanic Asian",
+                                  "Non-Hispanic white",
+                                  "No majority")) 
+
+figure
+```
+
+We can use the theme function to adjust the appearance of the figure:
+
+```{r}
+figure +
+  theme(panel.background = element_rect(fill = "white"),
+        panel.grid = element_line(colour = "black",
+                                  linetype = "dashed"),
+        legend.key = element_rect(fill = "white"))
+```
+
+Or we can use one of many pre-defined themes from either the `ggplot2` or the `ggthemes` package.
+
+Here is a theme that follows the style of the fivethirtyeight website:
+
+```{r}
+figure +
+  theme_fivethirtyeight()
+```
+
+And here's one that follows the style of The Economist (the magazine):
+
+```{r}
+figure +
+  theme_economist()
+```
+
+If you creating graphs in Excel, you might try this:
+
+```{r}
+figure +
+  theme_excel()
+```
+
+Here is a theme that follows the guidelines of Edward Tufte:
+
+```{r}
+figure +
+  theme_tufte()
+```
+
+Here is a theme that follows the guidelines of Stephen Few:
+
+```{r}
+figure +
+  theme_few()
+```
+
+
+I can also take a pre-defined theme and customize it further:
+
+```{r}
+figure +
+  theme_few() +
+  theme(legend.position = "bottom")
+```

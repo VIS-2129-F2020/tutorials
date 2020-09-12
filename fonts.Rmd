@@ -1,0 +1,65 @@
+---
+title: "Fonts"
+author: "Carole Voulgaris"
+date: "9/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE}
+library(tidyverse)
+library(extrafont)
+library(extrafontdb)
+```
+
+The default fonts in R might not be that interesting to you. Here is how you can get a little more flexibility.
+
+Let's start with a simple scatterplot.
+
+```{r}
+example_plot <- ggplot(trees, aes(x = Girth, 
+                                  y = Height,
+                                  color = Volume)) +
+    geom_point() +
+    ggtitle("Black Cherry Trees") +
+    scale_x_continuous(name = "Tree diameter (inches)") +
+    scale_y_continuous(name = "Tree height (feet)") +
+    scale_color_continuous(name = "Volume of timber\n(cubic feet)")
+
+example_plot
+```
+
+The default font is Arial or Helvetica, and it's fine. But maybe you want more options.
+
+To make all the fonts on your computer available to R, type `font_import()` into your console and press Enter. You only need to ever do this once. It takes some time to import all the fonts, so you'll get a prompt to type y or n (yes or no) to confirm that you really want to do that. Type `y` and press Enter.
+
+Now you can see a list of all the fonts that are available to you. Here's what I have on my computer (it's a PC).
+
+```{r}
+fonts()
+```
+
+```{r, message=FALSE}
+loadfonts(device = "win")
+```
+
+To use one of these fonts in your plot, use the `theme()` function.
+
+```{r}
+example_plot +
+  theme(text = element_text(family = "Garamond"))
+```
+
+Maybe you want to use different fonts for different text elements. No problem.
+
+```{r}
+example_plot +
+  theme(title = element_text(family = "Copperplate Gothic Bold" ),
+        axis.title = element_text(family = "Copperplate Gothic Light"),
+        axis.text = element_text(family = "Calibri" ),
+        legend.title = element_text(family = "Calibri", face = "bold"),
+        legend.text = element_text(family = "Calibri" ))
+```
