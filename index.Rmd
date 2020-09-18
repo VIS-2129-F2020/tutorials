@@ -40,11 +40,10 @@ For each week's assignment, I've posted (or will have posted) one or more video 
 
 ## Week 3: Projections and distortions
 
-[Written tutorial: Projections, transformations, and cartograms](https://vis-2129-f2020.github.io/tutorials/Week3){target=
-"_blank"}
+[Written tutorial: Projections, transformations, and cartograms](https://vis-2129-f2020.github.io/tutorials/Week3){target="_blank"}
 
 ## Week 4: Points and polygons
 
 [Video tutorial: Downloading and loading data from an open data portal into R](https://harvard.zoom.us/rec/share/bwcxR8_MCa8zDh0Wp07W9v8AF5kTSi3wVre_tbqeQkPP8P19BbgSWese-1NdlxQ.OjMA6BPxeSnwHNQ-?startTime=1600374226000){target="_blank}
 
-[Written Tutorial: Relationships between points and polygons](https://vis-2129-f2020.github.io/tutorials/Week3){target="_blank"}
+[Written Tutorial: Relationships between points and polygons](https://vis-2129-f2020.github.io/tutorials/Week4){target="_blank"}
