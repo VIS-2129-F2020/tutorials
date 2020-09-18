@@ -31,19 +31,25 @@ First, I'll read in all four datasets from the Boston Open Data portal (refer to
 Notice that I'm setting `quite=TRUE` on each call of `st_read()` function to avoid having a bunch of progress messages clutter up my knitted html file.
 
 ```{r}
-MA_state_plane <- "+proj=lcc +lat_1=41.71666666666667 +lat_2=42.68333333333333 +lat_0=41 +lon_0=-71.5 +x_0=200000 +y_0=750000 +ellps=GRS80 +units=m +no_defs"
+nhoods <- st_read("http://bostonopendata-boston.opendata.arcgis.com/datasets/3525b0ee6e6b427f9aab5d0a1d0a1a28_0.kml", 
+                  quiet = TRUE) 
 
-nhoods <- st_read("http://bostonopendata-boston.opendata.arcgis.com/datasets/3525b0ee6e6b427f9aab5d0a1d0a1a28_0.kml?outSR={%22latestWkid%22:2249,%22wkid%22:102686}", quiet = TRUE) 
+water <- st_read("http://bostonopendata-boston.opendata.arcgis.com/datasets/2b3c0fa13b1c468eb702a3645fcc6bcb_5.kml", 
+                 quiet = TRUE)
 
-water <- st_read("http://bostonopendata-boston.opendata.arcgis.com/datasets/2b3c0fa13b1c468eb702a3645fcc6bcb_5.kml", quiet = TRUE)
+parking <- st_read("http://bostonopendata-boston.opendata.arcgis.com/datasets/962da9bb739f440ba33e746661921244_9.kml", 
+                   quiet = TRUE) 
 
-parking <- st_read("http://bostonopendata-boston.opendata.arcgis.com/datasets/962da9bb739f440ba33e746661921244_9.kml?outSR={%22latestWkid%22:2249,%22wkid%22:102686}", quiet = TRUE) 
-
-trees <- st_read("http://bostonopendata-boston.opendata.arcgis.com/datasets/ce863d38db284efe83555caf8a832e2a_1.kml", quiet = TRUE) 
+trees <- st_read("http://bostonopendata-boston.opendata.arcgis.com/datasets/ce863d38db284efe83555caf8a832e2a_1.kml", 
+                 quiet = TRUE) 
 
 ```
 
 ## Transforming the data
+
+I'll be doing some distance and area calculations, so it's important that my spatial data is stored using a projected coordinate system (i.e. with coordinates in feet or meters) rather than a geographic coordinate system (i.e. with coordinates in degrees latitude and longitude).
+
+I'll transform my data to the Massachusetts State Plane system (remember, you can find the PROJ4 strings for most coordinate systems at [spatialreference.org](https://spatialreference.org/){target="_blank"}). 
 
 ```{r}
 MA_state_plane <- "+proj=lcc +lat_1=41.71666666666667 +lat_2=42.68333333333333 +lat_0=41 +lon_0=-71.5 +x_0=200000 +y_0=750000 +ellps=GRS80 +units=m +no_defs"
@@ -75,11 +81,11 @@ ggplot(water) +
 
 ## Creating a buffer
 
-The Massachusetts State Plane coordinate system I'm using is in units of meters (notice that the proj4 string says `+units=m` towards the end), so any distance/area calculations I do will be in meters or square meters.
+The Massachusetts State Plane coordinate system I'm using is in units of meters (notice that the PROJ4 string says `+units=m` towards the end), so any distance/area calculations I do will be in meters or square meters.
 
 How many of the trees in Boston are within 30 meters of a parking meter?
 
-To figure this out, I'll create a new polygon layer to represent a 30-meter buffer around the parking meters. st_buffer() will create a circle around each parking meter, but I'm adding st_union() after that to dissolve the overlapping circles and combine them all into one multipolygon. 
+To figure this out, I'll create a new polygon layer to represent a 30-meter buffer around the parking meters. `st_buffer()` will create a circle around each parking meter, and I'm adding `st_union()` after that to dissolve the overlapping circles and combine them all into one multipolygon. 
 
 I'll plot a quick map to see how the buffer looks.
 
@@ -92,7 +98,7 @@ ggplot(parking_buffer) +
   theme_map()
 ```
 
-## Which points are within a polygon?
+## Subsetting points based on whether they are in a polygon
 
 Now I can create a dataframe that only includes the trees that are located within the parking meter buffer.
 
@@ -109,7 +115,7 @@ ggplot(parking_buffer) +
   theme_map()
 ```
 
-Now I'll join my two trees dataframes. For any trees that are in the full dataset, but not in the set of trees that are by parking meters, will have an NA value for the variables Name.y and Description.y, so I can use that to create a binary variable that indicates whether each tree is by a parking meter.
+Now I'll join my two trees dataframes. For any trees that are in the `trees` dataset, but not in `trees_parking`, there will be an NA value for the variables `Name.y` and `Description.y`. Based on which values of `Name.y` are NA, I can create a binary variable that indicates whether each tree is by a parking meter.
 
 ```{r}
 trees <- trees %>%
@@ -174,7 +180,7 @@ ggplot(water) +
 ```
 
 
-## How many points are in a polygon?
+## Counting points in a polygon
 
 What if I wanted to know how many trees are in each Boston neighborhood?
 
