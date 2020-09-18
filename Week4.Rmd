@@ -14,6 +14,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+I'll be using the following libraries for this tutorial:
 
 ```{r, message=FALSE}
 library(sf)
@@ -23,28 +24,41 @@ library(ggspatial)
 library(units)
 ```
 
-## Load the data
+## Loading the data
 
-First, I'll read in all four datasets from the Boston Open Data portal (refer to the video tutorial for how I got the urls to read from).
+First, I'll read in all four datasets from the Boston Open Data portal (refer to the [video tutorial](https://harvard.zoom.us/rec/share/bwcxR8_MCa8zDh0Wp07W9v8AF5kTSi3wVre_tbqeQkPP8P19BbgSWese-1NdlxQ.OjMA6BPxeSnwHNQ-?startTime=1600374226000){target="_blank"} for how I got the urls to read from).
 
-As I read in each dataset, I'm also going to transform the data to the Massachusetts State Plane coordinate system.
+Notice that I'm setting `quite=TRUE` on each call of `st_read()` function to avoid having a bunch of progress messages clutter up my knitted html file.
 
 ```{r}
 MA_state_plane <- "+proj=lcc +lat_1=41.71666666666667 +lat_2=42.68333333333333 +lat_0=41 +lon_0=-71.5 +x_0=200000 +y_0=750000 +ellps=GRS80 +units=m +no_defs"
 
-nhoods <- st_read("http://bostonopendata-boston.opendata.arcgis.com/datasets/3525b0ee6e6b427f9aab5d0a1d0a1a28_0.kml?outSR={%22latestWkid%22:2249,%22wkid%22:102686}", quiet = TRUE) %>%
-  st_transform(MA_state_plane)
-  
+nhoods <- st_read("http://bostonopendata-boston.opendata.arcgis.com/datasets/3525b0ee6e6b427f9aab5d0a1d0a1a28_0.kml?outSR={%22latestWkid%22:2249,%22wkid%22:102686}", quiet = TRUE) 
 
-water <- st_read("http://bostonopendata-boston.opendata.arcgis.com/datasets/2b3c0fa13b1c468eb702a3645fcc6bcb_5.kml", quiet = TRUE) %>%
+water <- st_read("http://bostonopendata-boston.opendata.arcgis.com/datasets/2b3c0fa13b1c468eb702a3645fcc6bcb_5.kml", quiet = TRUE)
+
+parking <- st_read("http://bostonopendata-boston.opendata.arcgis.com/datasets/962da9bb739f440ba33e746661921244_9.kml?outSR={%22latestWkid%22:2249,%22wkid%22:102686}", quiet = TRUE) 
+
+trees <- st_read("http://bostonopendata-boston.opendata.arcgis.com/datasets/ce863d38db284efe83555caf8a832e2a_1.kml", quiet = TRUE) 
+
+```
+
+## Transforming the data
+
+```{r}
+MA_state_plane <- "+proj=lcc +lat_1=41.71666666666667 +lat_2=42.68333333333333 +lat_0=41 +lon_0=-71.5 +x_0=200000 +y_0=750000 +ellps=GRS80 +units=m +no_defs"
+
+nhoods <- nhoods %>%
   st_transform(MA_state_plane)
 
-parking <- st_read("http://bostonopendata-boston.opendata.arcgis.com/datasets/962da9bb739f440ba33e746661921244_9.kml?outSR={%22latestWkid%22:2249,%22wkid%22:102686}", quiet = TRUE) %>%
+water <- water %>%
   st_transform(MA_state_plane)
 
-trees <- st_read("http://bostonopendata-boston.opendata.arcgis.com/datasets/ce863d38db284efe83555caf8a832e2a_1.kml", quiet = TRUE) %>%
+parking <- parking %>%
   st_transform(MA_state_plane)
 
+trees <- trees %>%
+  st_transform(MA_state_plane)
 ```
 
 I'll draw a quick map now to see how the data look.
@@ -55,16 +69,19 @@ ggplot(water) +
   geom_sf(data = trees, color = "darkgreen", size = 0.01) +
   geom_sf(data = parking, size = 0.01) +
   geom_sf(data= nhoods, fill = NA, color = "gray") +
-  theme_map()
+  theme_map() +
+  annotation_scale()
 ```
 
 ## Creating a buffer
 
-The Massachusetts State Plane coordinate system I'm using is in units of meters (notice that the proj4 string says `+units=m` towards the end).
+The Massachusetts State Plane coordinate system I'm using is in units of meters (notice that the proj4 string says `+units=m` towards the end), so any distance/area calculations I do will be in meters or square meters.
 
 How many of the trees in Boston are within 30 meters of a parking meter?
 
-To figure this out, I'll create a new polygon layer to represent a 30-meter buffer around the parking meters. Then I'll plot a quick map to see how it looks.
+To figure this out, I'll create a new polygon layer to represent a 30-meter buffer around the parking meters. st_buffer() will create a circle around each parking meter, but I'm adding st_union() after that to dissolve the overlapping circles and combine them all into one multipolygon. 
+
+I'll plot a quick map to see how the buffer looks.
 
 ```{r}
 parking_buffer <- st_buffer(parking, dist = 30) %>%
@@ -77,7 +94,9 @@ ggplot(parking_buffer) +
 
 ## Which points are within a polygon?
 
-Now I can create a dataframe of just the trees that are located within the parking meter buffer.
+Now I can create a dataframe that only includes the trees that are located within the parking meter buffer.
+
+Then we can see how that subset of trees looks on the map. I'll draw them on top of the parking meter buffer.
 
 ```{r}
 trees_parking <- trees[parking_buffer,]
@@ -90,7 +109,7 @@ ggplot(parking_buffer) +
   theme_map()
 ```
 
-Now I'll join my two trees dataframes. Any trees that are in the full dataset, but in the set of trees that are by parking meters will have an NA value for the variables Name.y and Description.y, so I can use that to create a binary variable that indicates whether the tres is by a parking meter.
+Now I'll join my two trees dataframes. For any trees that are in the full dataset, but not in the set of trees that are by parking meters, will have an NA value for the variables Name.y and Description.y, so I can use that to create a binary variable that indicates whether each tree is by a parking meter.
 
 ```{r}
 trees <- trees %>%
@@ -101,20 +120,31 @@ trees <- trees %>%
 Now we can calculate how many trees are within 30 meters of a parking meter:
 
 ```{r}
-sum(trees$by_parking)
+n_parking_trees <- sum(trees$by_parking)
+
+n_parking_trees
 ```
 
-And what percent of all tree this represents.
+And what percent of all trees does this represent?
 
 ```{r}
-sum(trees$by_parking) / length(trees$by_parking)
+n_trees <- length(trees$by_parking)
+
+pct_parking_trees <- n_parking_trees / n_trees
+
+pct_parking_trees
 ```
 
 About 4 percent of all trees in Boston are within 30 meters of a parking meter.
 
 Let's show this on a pretty map!
 
+I'll include a note about the number and percent of trees near parking, and I want to add that note to the top left corner of the map. To find the coordinates of the top left corner, I can use `st_bbox()` to get the extents of one of my layers (I'll use the tree layer because it covers the most area).
+
 ```{r}
+left_side  <- st_bbox(trees)$xmin
+top_side <- st_bbox(trees)$ymax
+
 ggplot(water) +
   geom_sf(fill = "lightblue", color = NA) +
   geom_sf(data = trees, size = 0.01,
@@ -126,16 +156,14 @@ ggplot(water) +
   annotation_scale(location = "br") +
   annotation_north_arrow(location = "tr",
                          style = north_arrow_minimal()) +
-  annotate(geom = "text", x = st_bbox(trees)$xmin, 
-           y = st_bbox(trees)$ymax, 
-           label = paste("Of the ", prettyNum(length(trees$Name), 
-                                             big.mark = ","),
+  annotate(geom = "text", x = left_side, 
+           y = top_side, 
+           label = paste("Of the ", 
+                         prettyNum(n_trees, big.mark = ","),
                          " trees in Boston\n", 
-                         prettyNum(sum(trees$by_parking),
-                                   big.mark = ","),
-                         " (", prettyNum(100*sum(trees$by_parking) /
-                                          length(trees$Name),
-                                        digits = 0),
+                         prettyNum(n_parking_trees, big.mark = ","),
+                         " (", 
+                         prettyNum(100*pct_parking_trees, digits = 0),
                          "%) are within 30\nmeters of a parking meter.",
                          sep = ""),
            hjust = 0, vjust = 0, size = 3) +
@@ -149,6 +177,10 @@ ggplot(water) +
 ## How many points are in a polygon?
 
 What if I wanted to know how many trees are in each Boston neighborhood?
+
+`st_covers()` will return a list of the trees in each neighborhood. By using `lengths()` to get the length of each of those lists, I can get the number of trees in each neighborhood and add that as a column to my neighborhoods dataframe.
+
+Then, I can use that new variable to make a chloropleth map.
 
 ```{r}
 nhoods <- nhoods %>%
@@ -172,7 +204,11 @@ theme_map() +
 
 ## Calculating areas and densities
 
-Maybe I'm more interested in the density of trees (the number of trees per square km). To calculate that, I'd need to find the area of each neighborhood.
+Maybe I'm more interested in the density of trees (the number of trees per square km). To calculate that, I'd need to find the area of each neighborhood using `st_area()`.
+
+`st_area()` will calculate the areas in square meters because those are the units of the coordinate system we're using. Square kilometers might be more useful, so I'll use `set_units()` to convert from square meters to square kilometers.
+
+The result will be a particular data type that includes units, which can trip up ggplot() when it creates the legend, so I'll use `as.numeric()` to convert to just regular numbers.
 
 ```{r}
 nhoods <- nhoods %>%
