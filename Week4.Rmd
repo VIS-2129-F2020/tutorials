@@ -22,6 +22,7 @@ library(tidyverse)
 library(ggthemes)
 library(ggspatial)
 library(units)
+library(nngeo)
 ```
 
 ## Loading the data
@@ -98,7 +99,7 @@ ggplot(parking_buffer) +
   theme_map()
 ```
 
-## Subsetting points based on whether they are in a polygon
+## Subsetting points with a polygon
 
 Now I can create a dataframe that only includes the trees that are located within the parking meter buffer.
 
@@ -237,3 +238,107 @@ theme_map() +
     legend.background = element_rect(fill = alpha("white", 0.5), 
                                          color = "gray"))
 ```
+
+## Finding the closest point
+
+Maybe I want to know how far each parking meter is from a tree.
+
+`st_nn()` will return the row number (from the trees dataframe) of the nearest tree and, if I set `returnDist=TRUE`, it will also return the distance to the closest tree. I don't really care which tree it is (a tree is a tree, right?), so I'll just use `st_nn()$dist` to get the distances.
+
+It returns the distance in a weird format, so I'm adding a second mutate statement to make sure it's treated as a number.
+
+```{r, message=FALSE, results='hide'}
+parking <- parking %>%
+  mutate(tree_dist = st_nn(parking, trees, 
+                           returnDist = TRUE)$dist) %>%
+  mutate(tree_dist = as.numeric(tree_dist))
+```
+
+Now I can calculate the average distance from a parking meter to the nearest tree.
+
+```{r}
+avg_tree_dist <- mean(parking$tree_dist)
+
+avg_tree_dist
+```
+
+And I can also create a map to represent how far each parking meter is from a tree. I'm using `coord_sf()` to set the map extents to just the area where the parking meters are.
+
+```{r}
+right_side <- st_bbox(parking)$xmax
+left_side  <- st_bbox(parking)$xmin
+top_side <- st_bbox(parking)$ymax
+bottom_side <- st_bbox(parking)$ymin
+
+
+ggplot(water) +
+  geom_sf(fill = "lightblue", color = NA) +
+  geom_sf(data = parking, size = 0.1,
+          aes(color = tree_dist)) +
+  coord_sf(xlim = c(left_side, right_side), 
+           ylim = c(bottom_side, top_side), expand = FALSE) +
+  scale_color_viridis_c(name = 
+                          "Boston Parking meters\nby distance to a tree") +
+  annotation_scale(location = "br") +
+  annotation_north_arrow(location = "tr",
+                         style = north_arrow_minimal()) +
+  annotate(geom = "text", x = left_side + 300, 
+           y = top_side - 550, 
+           label = paste("On average, a Boston parking meter\nis ", 
+                         prettyNum(avg_tree_dist, digits = 3),
+                         " meters from a tree.",
+                         sep = ""),
+           hjust = 0, vjust = 0, size = 3) +
+  theme_map() +
+  theme(panel.background = element_rect(fill = "cornsilk1"),
+        legend.background = element_rect(fill = alpha("white", 0.5), 
+                                         color = "gray"))
+```
+
+## Identifying overlapping polygons
+
+Maybe I'd like to know which neighborhoods have bodies of water in them. `st_overlaps()` works the same as `st_covers()` but instead of telling me the number of features contained by each neighborhood, it tells me the number of features that overlaps each neighborhood.
+
+```{r}
+nhoods <- nhoods %>%
+  mutate(num_water = lengths(st_overlaps(nhoods, water))) %>%
+  mutate(has_water = num_water > 0)
+```
+
+How many neighborhoods overlap with bodies of water?
+
+```{r}
+n_water_nhoods <- sum(nhoods$has_water)
+
+n_water_nhoods
+```
+
+```{r}
+left_side  <- st_bbox(water)$xmin
+top_side <- st_bbox(water)$ymax
+
+ggplot(water) +
+  geom_sf(fill = "lightblue", color = NA) +
+  geom_sf(data = nhoods,
+          aes(fill = has_water)) +
+  scale_fill_manual(values = c("cornsilk1", "darkseagreen1"),
+          name = "Boston Neighborhoods\nby presence of a body of water", 
+          labels = c("Neighborhood without\nan overlapping body of water",
+                     "Neighborhood with an\noverlapping body of water")) +
+  annotation_scale(location = "br") +
+  annotation_north_arrow(location = "tr",
+                         style = north_arrow_minimal()) +
+  annotate(geom = "text", x = left_side, 
+           y = top_side - 1000, 
+           label = paste(n_water_nhoods ,
+                         "of Boston's", 
+                         length(nhoods$Name),
+                         "neighborhoods contain\nor overlap with", 
+                         "a body of water."),
+           hjust = 0, vjust = 0, size = 3) +
+  theme_map() +
+  theme(panel.background = element_rect(fill = "gray"),
+        legend.background = element_rect(fill = alpha("white", 0.5), 
+                                         color = "gray"))
+```
+
