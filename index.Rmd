@@ -40,7 +40,11 @@ For each week's assignment, I've posted (or will have posted) one or more video 
 
 ## Week 3: Projections and distortions
 
+### Written tutorial
+
 [Written tutorial: Projections, transformations, and cartograms](https://vis-2129-f2020.github.io/tutorials/Week3){target="_blank"}
+
+### Video tutorials
 
 [Friday Discussion: Census data and R functions](https://harvard.zoom.us/rec/play/aJNMgFVe6w7GXFgvV8ITrDCC4QCzoC9dac5GaupNLNfKg-yDYgtDe9W3WcwZQyKQcnV6dDVpS8HGjgkL.j75Zv60iwUPiYjxz?autoplay=true&startTime=1600434385000){target="_blank"}
 
