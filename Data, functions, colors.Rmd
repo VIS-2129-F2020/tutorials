@@ -1,0 +1,571 @@
+---
+title: "Week 2 recap - Data, functions and colors"
+date: "9/17/2020"
+output: 
+  html_document:
+    toc: true
+    toc_float: 
+      toc_collapsed: true
+
+---
+
+
+
+```{r setup, message=FALSE}
+library(tidycensus)
+library(tidyverse)
+library(ggplot2)
+library(lemon)
+knit_print.data.frame <- lemon_print
+
+
+# list of themes can be found here https://www.datadreaming.org/post/r-markdown-theme-gallery/
+```
+
+
+## 1.Getting the census data
+
+tidycensus is an R package that allows users to interface with the US Census Bureau’s decennial Census and American Community Survey and return data frames. There are three ways of getting data from tidycensus: get_pums, get_acs and get_decennial().
+
+
+### 1.1. Public Use Microdata Series
+
+PUMS contains data about individuals and households and is collected through American Community Survey - a demographics survey conducted every year on a sample of about 2 million households. The estimates for the entire population are calculated based on the collected sample, which is the reason you get two values for a single variable - estimate and moe (margin of error). You can select a one-year survey (acs1) or a five-year survey (acs5).
+
+If you need international individual/household data, you can use https://ipums.org/.
+
+How to get PUMS data?
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+
+# explore PUMS variables by passing the function pums_variables.
+
+pums_explore_1 <- pums_variables
+
+# Calling pums_variables on its own is not too useful, we get too many variables. 
+# Let's select only one-year, person-level data for the year 2017. 
+# The function filter() allows us to select rows based on some condition. 
+
+pums_explore_2 <-pums_variables %>% 
+  filter(level == "person", year == 2017, survey == "acs1")
+
+# you can narrow the selection further by using distinct() to get unique variables.
+
+pums_explore_3 <-pums_variables %>% 
+  filter(level == "person", year == 2017, survey == "acs1") %>% 
+  distinct(year, survey, var_code, var_label, data_type, level)
+
+# the code above helps us explore the (names of) variables in the dataset. To get the actual data, use get_pums.
+
+data_pums <- get_pums(c("AGEP", "MAR", "MIL"), state="WY", year=2018, survey = "acs5")
+
+# the dataframe data_pums has several columns we don't need (such as serial number, state code, etc.). To select the specific columns, we use function select(). 
+
+data_pums_cleaned <- data_pums %>% select(AGEP,MAR,MIL)
+
+```
+
+
+### 1.2. American Community Survey (acs)
+
+ACS tabulates individual-level data to a geographic region. Geography available at https://walker-data.com/tidycensus/articles/basic-usage.html. 
+
+
+
+```{r message=FALSE}
+
+# explore the variables in acs. load_variables is analogous to pums_variables - use it to explore variables.
+
+acs_explore <- load_variables(2017, "acs5")
+
+
+# To get the data, use get_data. You can specify the desired variables directly in the function, for example get_acs(..., c("B01002_001E", "B01003_001E"), ...), or create a list beforhand. If you use more than 2-3 variables, it's good practice to make a list (name it vars or something similar), just so your code is easier to read. 
+
+vars = c(age = "B01002_001E", income ="B06011_001E", total_trips = "B08501_001E", trips_by_car = "B08501_009E")
+
+data_acs <- get_acs(geography = "county", variables = vars, 
+                    year = 2018, survey = "acs5", output = "wide")
+
+data_acs <- data_acs %>% select(GEOID, NAME, age,income,total_trips,trips_by_car)
+```
+
+
+For tutorials on ggplot go to https://vis-2129-f2020.github.io/tutorials/
+
+
+
+### 1.3. Decennial (10-year) census
+
+Census is the most accurate individual-level survey conducted every 10 years. 
+
+
+
+```{r message=FALSE}
+#explore the dataset
+
+decennial_explore <- load_variables(2010, "sf1")
+
+#select variables
+
+data_decennial <- get_decennial(geography = "block", variables = c(vacancy = "H005001", Hisp_pop ="H007001"), year = 2010, state = "WY", county = "Teton County", output = "wide") %>%  filter(vacancy>0)
+```
+
+
+
+## 2. Useful functions in R (so far)
+
+### nrow(), ncol(), dim()
+These functions calculate the number of rows (nrow), number of columns (ncol), or both (dim) in the data frame. The functions are very useful for data exploration and data cleaning.
+
+```{r}
+
+print(c(nrow(data_acs), ncol(data_acs)))
+```
+
+
+### head()
+
+The head(data, n) function takes a data frame (fancy name for a table) and an argument “n” and returns the first n rows of a data frame or matrix. By default it returns first 6 rows. 
+```{r, render=lemon_print}
+head(data_acs)
+```
+
+
+```{r, render=lemon_print}
+head(data_acs, 2)
+```
+### if-else
+
+If-else statements are used for testing if a condition is true. It's form is: <br/>
+*if (condition) {do something} else {do something else}*
+
+```{r}
+x <- 42
+
+if (x>2) 
+  {print("x is larger than two")} else
+  {print("x is not larger than two")}
+```
+```{r}
+# we can add multiple conditions with else if
+
+x <- 2
+
+if (x>2) 
+  {print("x is larger than two")} else if (x == 2)
+    {print("x is two")} else
+      {print("x is smaller than two")}
+    
+
+```
+### case_when
+This function performs if-else statements on each element in a vector (list, matrix or data frame). Usage: <br/>
+case_when(logical_statement ~ replacement). The left hand side determines which values in the data frame match the condition. The right hand side provides the replacement value.
+
+```{r}
+# x is a list of numbers from 1 to 20. Let's replace even numbers with a string "even number". Symbol %% calculates the remainder. 
+
+x <- 1:20
+
+case_when(
+  x %% 2 == 0 ~ "even number",
+  x %% 2 == 1 ~ as.character(x)
+)
+
+```
+Function case_when is very useful in combination with mutate() function presented below. 
+
+### select()
+
+
+Select function is used to select variables (columns).The function requires a data frame and a list of columns, select(data, column_name1, column_name2...)
+
+```{r, render=lemon_print}
+# you can specify desired columns directly in the function...
+
+new_data <- select(data_acs, NAME, income)
+head(new_data,2)
+```
+
+```{r, render=lemon_print, message=FALSE}
+# ... or in a separate variable
+
+cols <- c("NAME", "age", "income", "total_trips")
+new_data <- select(data_acs, cols)
+head(new_data,2)
+```
+
+
+```{r, render=lemon_print}
+
+# finally, you can specify the range of columns you want to select. Column1:Column4 selects all columns between positions 1 and 4 (including those two).
+
+new_data <- select(data_acs, NAME:total_trips)
+head(new_data,2)
+```
+
+### filter()
+The filter() function is used to subset a data frame (to select rows) by specifying conditions. To be retained, the row must produce a value of TRUE for all conditions. Rows that contain NA values are dropped.
+
+```{r}
+nrow(data_acs)
+```
+
+```{r}
+# select rows where median age is above 40.
+new_data <- filter(data_acs, age > 40)
+nrow(new_data)
+```
+```{r}
+# we can also specify multiple conditions. 
+# For example, retain rows where age is above 40 and median income > $40k.
+
+new_data <- filter(data_acs, age > 40 & income > 40000)
+nrow(new_data)
+```
+
+### mutate() and transmute()
+
+mutate() adds new variables and preserves existing ones; transmute() adds new variables and drops existing ones. New variables overwrite existing variables of the same name. The first function takes the form of <br/>
+*mutate(data, new_variable = f(existing_variable))*
+
+
+```{r, render=lemon_print}
+# add a column with percents of trips taken by a car.
+
+new_data <- mutate(data_acs, percent_trips_by_car = trips_by_car/total_trips)
+head(new_data,2)
+```
+
+```{r, render=lemon_print}
+# return only one column with percents of trips taken by a car
+
+new_data <- transmute(data_acs, percent_trips_by_car = trips_by_car/total_trips)
+head(new_data,2)
+```
+
+The combination case_when() and mutate() is great for converting continuous variables into discrete. Let's add a categorical variable income_cat that tells us if the median income in a county is low or high.  
+
+```{r, render=lemon_print}
+plot_data <- data_acs %>% mutate(income_cat = case_when(income <= 20000 ~ "low",
+                                                       income > 20000 ~ "high"))
+head(plot_data)
+```
+
+### Pipe operator %>%
+This operator will forward a value, or the result of an expression, into the next function call/expression. Essentially, take a function on the right and pass it to the data on the left. For example, a function to display data can be written as:
+
+```{r, render=lemon_print}
+head(data_acs,2)
+```
+Or we can use pipe operator and "chain" the functions:
+
+```{r, render=lemon_print}
+data_acs %>% head(2)
+```
+If you are not using %>% then data needs to be inside the function - head(data). If you are using it, push the data to the left - data %>% head(). The methods are equivalent. 
+
+```{r}
+new_data1 <- filter(data_acs, age>40)
+new_data2 <- data_acs %>% filter(age>40)
+
+# let's check if new_data1 and new_data2 are the same. We can use all.equal(a,b) function to test that.
+
+if (all.equal(new_data1, new_data2))
+  {print("Two data frames are the same")} else
+  {print("They are different")}
+
+```
+One advantage of using %>% is when you need to chain multiple functions. The code is easier to write and read. 
+```{r, render=lemon_print}
+# here we select the column "age" from data_acs, filter all ages above 40, and add another column called age_doubled with ages multiplied by 2. Although there are 3 functions, with %>% it is easy to understand the code.
+
+new_data <- data_acs %>% select(NAME, age) %>% filter(age>40) %>% mutate(age_doubled = age*2)
+head(new_data, 2)
+```
+
+```{r, render=lemon_print}
+# same thing, but not really legible.
+new_data <- mutate(filter(select(data_acs,NAME, age), age>40 ), age_doubled = age*2)
+head(new_data, 2)
+```
+
+
+## 3. Colors in ggplot
+
+In this section, we will see how to set and change colors in ggplot. We will see the difference between the parameter *color* in the aes() function (aes(data, x=var1, y=var2, color = var3)) and *color* used to set the actual color of the plot. Let's first get some data to visualize.
+
+```{r, render=lemon_print}
+
+plot_data <- data_acs %>% mutate(pct_by_car = trips_by_car/total_trips, income_cat = case_when(income <= 20000 ~ "low", income > 20000 ~ "high"))
+
+plot_data <- na.omit(plot_data)
+head(plot_data, 2)
+```
+
+### 3.1. Scatter plot
+
+
+In ggplot, we can pass aesthetic parameter (aes()) to define how variables in the data are mapped to visual properties (aesthetics) of geoms. In scatter plot, we usually use x and y parameter (aes(x=var1, y=var2)) to visualize the relationship between x and y. However, we can pass additional parameter "color" to visualize a third variable on our chart. Here, we will focus on that color parameter - aes(..., color = variable, ...). There are three options, color = None, color = discrete variable and color = continuous variable.
+
+#### No color
+
+Let's plot a simple scatter plot. By passing only x and y parameters - aes(x = something, y = something else), we share two pieces of information - position on x and y axis. 
+
+```{r, message = FALSE}
+# with aes(x,y) we only show the position of the dots on the plot.
+
+plot1 <- ggplot(plot_data, 
+       aes(x = age,
+           y = pct_by_car)) +
+  geom_point(alpha = 0.5) +
+  scale_x_continuous(name = "Median age in county") +
+  scale_y_continuous(name = "Percent of trips by car") +
+  theme_bw()
+
+# To change colors of the dots, we can simply use geom_point(color = "some color"). 
+
+plot2 <- ggplot(plot_data, 
+       aes(x = age,
+           y = pct_by_car)) +
+  geom_point(alpha = 0.5, color = "blue") +
+  scale_x_continuous(name = "Median age in county") +
+  scale_y_continuous(name = "Percent of trips by car") +
+  theme_bw()
+
+library(gridExtra)
+grid.arrange(plot1, plot2, ncol=2)
+```
+
+#### Color represents categorical variable
+
+By specifying additional parameters, such as color in aes(x,y,color) we can add information to the chart. If we pass a categorical variable to *color*, then the number of colors on the chart will be equal to the number of categories in the variable. 
+
+```{r}
+# if color represents a categorical variable - number of colors are equal to the number of categories
+ggplot(plot_data, 
+       aes(x = age,
+           y = pct_by_car,
+           color = income_cat)) +
+geom_point(alpha = 0.5) +
+  scale_x_continuous(name = "Median age in county") +
+  scale_y_continuous(name = "Percent of trips by car") +
+  theme_bw()
+```
+
+Colors of the dots can be changed by using scale_color_manual. In general, scale_ is used to edit parameters in aes().
+
+```{r}
+
+ggplot(plot_data, 
+       aes(x = age,
+           y = pct_by_car,
+           color = income_cat)) +
+geom_point(alpha = 0.5) +
+  scale_x_continuous(name = "Median age in county") +
+  scale_y_continuous(name = "Percent of trips by car") +
+  scale_color_manual(values = c("blue", "green")) +
+  theme_bw()
+```
+
+If you don't want to set the colors manually, you can use pre-made palettes. This is helpful when you have large number of categories. The most commonly used color scales include:
+
+<ul>
+<li>Viridis color scales [must import viridis package]. Function: scale_color_viridis()</li>
+<li>Colorbrewer palettes [RColorBrewer package]. Function: scale_color_brewer()</li>
+<li>Grey color palettes [ggplot2 package]. Function: scale_color_brewer()</li>
+<li>Scientific journal color palettes [ggsci package]. Function: scale_color_npg()</li>
+<li>Wes Anderson color palettes [wesanderson package]. Function: wes_palette()</li>
+</ul>
+
+
+```{r, message = FALSE}
+library(RColorBrewer)
+
+ggplot(plot_data, 
+       aes(x = age,
+           y = pct_by_car,
+           color = income_cat)) +
+geom_point(alpha = 0.5) +
+  scale_x_continuous(name = "Median age in county") +
+  scale_y_continuous(name = "Percent of trips by car") +
+  scale_color_brewer(palette = "Dark2") +
+  theme_bw()
+```
+
+#### Color represents continuous variable
+
+If a continuous variable is passed to parameter *color*, the simplest plot will have the dots of same color, but different gradient.
+```{r}
+# color is a continuous value presented by shades of the same color
+ggplot(plot_data, 
+       aes(x = age,
+           y = pct_by_car,
+           color = income)) +
+geom_point() +
+  scale_x_continuous(name = "Median age in county") +
+  scale_y_continuous(name = "Percent of trips by car") +
+  theme_bw()
+```
+
+There are multiple ways to change color. We will cover three:
+
+<ul>
+<li>scale_color_gradient()</li>
+<li>scale_color_gradientn()</li>
+<li>palettes</li>
+</ul>
+
+```{r}
+# scale_color_gradient() lets us choose two boundary colors
+
+pl1 <- ggplot(plot_data, 
+       aes(x = age,
+           y = pct_by_car,
+           color = income)) +
+geom_point() +
+  scale_x_continuous(name = "Median age in county") +
+  scale_y_continuous(name = "Percent of trips by car") +
+  scale_color_gradient(low = "yellow", high = "red") + 
+  theme_bw()
+
+pl2 <- ggplot(plot_data, 
+       aes(x = age,
+           y = pct_by_car,
+           color = income)) +
+geom_point() +
+  scale_x_continuous(name = "Median age in county") +
+  scale_y_continuous(name = "Percent of trips by car") +
+  scale_color_gradient(low = "white", high = "black") + 
+  theme_bw()
+
+
+grid.arrange(pl1, pl2, ncol=2)
+
+```
+
+```{r}
+
+# scale_color_gradientn() lets us choose however many colors we want
+
+
+pl1 <- ggplot(plot_data, 
+       aes(x = age,
+           y = pct_by_car,
+           color = income)) +
+geom_point() +
+  scale_x_continuous(name = "Median age in county") +
+  scale_y_continuous(name = "Percent of trips by car") +
+  scale_color_gradientn(colors = c("green", "yellow", "red")) + 
+  theme_bw()
+
+pl2 <- ggplot(plot_data, 
+       aes(x = age,
+           y = pct_by_car,
+           color = income)) +
+geom_point() +
+  scale_x_continuous(name = "Median age in county") +
+  scale_y_continuous(name = "Percent of trips by car") +
+  scale_color_gradientn(colors = c("yellow", "green", "blue", "red" )) + 
+  theme_bw()
+
+grid.arrange(pl1, pl2, ncol=2)
+```
+
+
+```{r, message=FALSE}
+
+# palettes can be used similarly to what we did before
+
+library(viridis)
+
+pl <- ggplot(plot_data, 
+       aes(x = age,
+           y = pct_by_car,
+           color = income)) +
+  geom_point() +
+  scale_x_continuous(name = "Median age in county") +
+  scale_y_continuous(name = "Percent of trips by car") +
+  scale_color_viridis() +
+  theme_bw()
+
+pl
+```
+
+### 3.2. "Area" plots
+
+By area plots we consider plots that have an area within a boundary that can be colored. Parameter fill is used to color that area.
+
+
+```{r}
+# fill controls the color of the fill while color controls the color of the boundary
+
+p1 <- ggplot(plot_data, 
+         aes(x = age,
+             y = pct_by_car,
+         fill = income_cat)) +
+    geom_boxplot() +
+    scale_x_continuous(name = "Median age in county") +
+    scale_y_continuous(name = "Percent of trips by car") +
+    theme_bw()
+
+p2 <- ggplot(plot_data, 
+       aes(x = age,
+           y = pct_by_car,
+       color = income_cat)) +
+  geom_boxplot() +
+  scale_x_continuous(name = "Median age in county") +
+  scale_y_continuous(name = "Percent of trips by car") +
+  theme_bw()
+
+grid.arrange(p1, p2, ncol=2)
+
+
+```
+
+To manipulate the color of the fill, you can use all the same tricks shown in the scatter plots, only instead of scale_color_ use scale_fill_. 
+
+```{r, message = FALSE}
+
+#set the colors manually
+
+p1 <-  ggplot(plot_data, 
+         aes(x = age,
+             y = pct_by_car,
+         fill = income_cat)) +
+    geom_boxplot() +
+    scale_x_continuous(name = "Median age in county") +
+    scale_y_continuous(name = "Percent of trips by car") +
+    scale_fill_manual(values = c("blue", "green")) +
+    theme_bw()
+
+# choose a palette
+
+p2 <- ggplot(plot_data, 
+         aes(x = age,
+             y = pct_by_car,
+         fill = income_cat)) +
+    geom_boxplot() +
+    scale_x_continuous(name = "Median age in county") +
+    scale_y_continuous(name = "Percent of trips by car") +
+    scale_fill_brewer(palette = "Dark2") +
+    theme_bw()
+
+# you can use scale_fill_ and scale_color_ in the same graph. Remember, cale_fill_  controls the fill color, scale_color_ controls boundary color.
+
+p3 <- ggplot(plot_data, 
+         aes(x = age,
+             y = pct_by_car,
+         fill = income_cat,
+         color = income_cat)) +
+    geom_boxplot() +
+    scale_x_continuous(name = "Median age in county") +
+    scale_y_continuous(name = "Percent of trips by car") +
+    scale_fill_manual(values = c("green", "blue")) +
+    scale_color_manual(values = c("red", "yellow")) +
+    theme_bw()
+
+grid.arrange(p1, p2, p3, ncol=3)
+
+
+```
