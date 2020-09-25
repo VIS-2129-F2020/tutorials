@@ -52,6 +52,15 @@ For each week's assignment, I've posted (or will have posted) one or more video 
 
 ## Week 4: Points and polygons
 
-[Video tutorial: Downloading and loading data from an open data portal into R](https://harvard.zoom.us/rec/share/bwcxR8_MCa8zDh0Wp07W9v8AF5kTSi3wVre_tbqeQkPP8P19BbgSWese-1NdlxQ.OjMA6BPxeSnwHNQ-?startTime=1600374226000){target="_blank}
+### Written tutorial
 
 [Written Tutorial: Relationships between points and polygons](https://vis-2129-f2020.github.io/tutorials/Week4){target="_blank"}
+
+[Friday Discussion: Maps and Projections](https://vis-2129-f2020.github.io/tutorials/Maps_projections){target="_blank"}
+
+### Video tutorials
+
+[Video tutorial: Downloading and loading data from an open data portal into R](https://harvard.zoom.us/rec/share/bwcxR8_MCa8zDh0Wp07W9v8AF5kTSi3wVre_tbqeQkPP8P19BbgSWese-1NdlxQ.OjMA6BPxeSnwHNQ-?startTime=1600374226000){target="_blank}
+
+[Friday Discussion: Maps and Projections](https://harvard.zoom.us/rec/share/3NtyIAFAi_oNaa1ymfhWs8Az50h1nsaVI08J7ITCWCHwhhbPO1Tt3DcKgGhRclt3.86BRkTzbdPzWbNXR?startTime=1601039313000)
+
