@@ -1,0 +1,58 @@
+---
+title: "Spatial Data Formats"
+author: "Carole Voulgaris"
+date: "9/26/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries
+
+```{r}
+library(sf)
+library(ggplot2)
+```
+
+## Load data in 3 formats
+
+```{r read shapefile}
+
+exercise_shp <- st_read(
+  "data-downloads/Parks_and_Recreation-shp/Parks_and_Recreation.shp")
+
+```
+
+```{r read geojson}
+
+exercise_geojson <- st_read("data-downloads/Parks_and_Recreation.geojson")
+
+```
+
+```{r read KML}
+
+exercise_kml <- st_read("data-downloads/Parks_and_Recreation.kml")
+
+```
+
+## Transform coordinate system
+```{r transform}
+Irish_nat_grid <- "+proj=tmerc +lat_0=53.5 +lon_0=-8 +k=1.000035 +x_0=200000 +y_0=250000 +a=6377340.189 +b=6356034.447938534 +units=m +no_defs"
+
+exercise_nat_grid <- exercise_geojson %>%
+  st_transform(crs = Irish_nat_grid)
+
+```
+
+
+## Save as a shapefile
+
+```{r save as shapefile}
+
+st_write(exercise_nat_grid, "exercise_nat_grid.shp")
+
+```
+
+
