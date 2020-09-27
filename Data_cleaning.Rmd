@@ -1,0 +1,271 @@
+---
+title: "Data Cleaning"
+date: "9/25/2020"
+output: html_document
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r setup, message=FALSE}
+library(RCurl)
+library(lemon)
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(sf)
+library(rnaturalearth)
+library(tidyverse)
+library(ggspatial)
+library(cartogram)
+library(ggthemes)
+knit_print.data.frame <- lemon_print
+
+```
+One of the many online courses for cleaning data in R can be found at https://www.datacamp.com/courses/cleaning-data-in-r. 
+
+
+## Analysis of COVID cases
+
+In this example, I would like to download Covid data and create a simple choropleth map with the country-level death rate. However, I need to clean the data first. 
+
+### 1. Download the data
+
+John Hopkins University’s Center for Systems Science and Engineering has daily updates on the number of Covid-19 cases and publishes it on Github: https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_daily_reports. You can get data directly from a githunb CSV by using library RCurl: copy the link from Github page with raw data, use function getURL, and then read.csv. Whenever you imported data, always inspect it with head(), or click on the name of the data frame in the upper right corner of RStudio.
+
+
+```{r}
+x <- getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/09-26-2020.csv")
+COVID_cases <- read.csv(text = x)
+```
+
+### 2. Explore the data with head() and summary() functions
+
+```{r, render=lemon_print}
+head(COVID_cases)
+```
+
+
+Summary() is useful for a quick overview of the columns in the data frame. It displays the length of the columns, number of missing values, as well as min, 1st quartile, median, mean, 3rd quartile and max values. It can point to outliers, messy data types in the columns and a general usefulness of the variables (columns) in your data.
+```{r,render=lemon_print}
+summary(COVID_cases)
+```
+
+
+Before you start editing and cleaning the data set, it's always a good idea to make a copy you can come back to.
+```{r}
+COVID_cases_copy <- copy(COVID_cases)
+```
+
+### 3. Select only the necessary columns
+
+It seems that there are several columns we don't need. Let's select the ones we do.
+```{r}
+COVID_cases <- select(COVID_cases, Province_State, Country_Region, Confirmed, Deaths)
+head(COVID_cases)
+```
+
+Upon further inspection, it looks like that some countries have a country-level data, while the others have a province-level data. 
+```{r}
+Canada <- COVID_cases %>% filter(Country_Region == "Canada")
+head(Canada)
+```
+
+To get the country-level data, I need to group the provinces by the country, and then sum the numbers. 
+
+### 4. Group and aggregate the rows 
+
+Function group_by() is used to group the data according to one or more variables. Grouping doesn't change how the data looks, but it tells R to look for the same values in the specified column.
+
+Once grouped, values can be added, averaged, or counted (similar to the pivot tables in Excel).
+```{r, message=FALSE}
+Covid_by_country <- COVID_cases %>% 
+  group_by(Country_Region) %>%
+  summarize(Confirmed_by_country = sum(Confirmed), Deaths_by_country = sum(Deaths))
+head(Covid_by_country)
+```
+
+Other functions that summarize() can take are n(), mean(), median(), min(), and max(). Let's calculate death rate. 
+
+```{r}
+Covid_by_country <-  Covid_by_country %>%
+  mutate(Death_rate = Deaths_by_country/Confirmed_by_country*100)
+```
+
+Let's plot that.
+
+```{r}
+world <- ne_countries(scale = 50, returnclass = "sf") %>%
+  filter(name != "Antarctica")
+
+covid_rate <- world %>%
+  left_join(Covid_by_country, by = c("name_long" = "Country_Region"))
+
+
+ggplot(covid_rate, aes(fill = Death_rate)) +
+  geom_sf(color="grey") +
+  scale_fill_gradient(low = "yellow", high = "red",
+    name = "Covid Death rate [%]",
+      breaks = seq(0, 30, by = 5),
+    labels = formatC(seq(0, 30, by = 5), 
+                     big.mark = ",", format = "f", digits = 1)) +
+  theme_map()
+```
+
+### 5. Missing values
+Some countries are missing! The most likely cause is that the names of a country is different in two data sets. Let's explore missing countries further. Function is.na() helps us find missing values. 
+
+```{r}
+missing_countries <- covid_rate %>% filter(is.na(Death_rate))
+n <- nrow(missing_countries)
+print(paste("The number of missing countries is ", n))
+
+
+```
+
+Upon inspecting missing_countries, it looks like some places are not sovereign states, but dependencies which might not have separate COVID data. Let's focus only on sovereign countries.
+
+```{r}
+missing_countries <- missing_countries %>% filter(type == "Sovereign country" | type=="Country")
+missing_countries$Death_rate <- NULL
+missing_countries$Deaths_by_country <- NULL
+missing_countries$Confirmed_by_country <- NULL
+
+n <- nrow(missing_countries)
+print(paste("The number of missing countries we will analyze is ", n))
+```
+
+#### Same country, different name (enter James Franco meme)
+
+When you compare COVID data and world data, it looks like countries are not missing, but they are named differently. For example, in the COVID data base, US is called United States, while in the map data - United States of America.To get around that, we can use fuzzyjoin. Fuzzyjoin is equivalent to join, except it matches partial names instead of the full entire name. For example, join_left will not join "Bahamas" and "The Bahamas". Fuzzyjoin will. Let's try that. 
+
+```{r, message = FALSE}
+library(stringr)
+library(fuzzyjoin)
+missing_countries <- missing_countries %>% 
+  fuzzy_inner_join(Covid_by_country, by = c("admin" = "Country_Region"), match_fun = str_detect)
+
+n <- nrow(missing_countries)
+print(paste("The number of missing countries for which we managed to find data is ", n))
+```
+
+
+```{r}
+# select only the columns we need
+missing_countries <- missing_countries %>% 
+  select(admin, Death_rate, geometry)
+
+covid_rate <- covid_rate %>%
+  select(admin, Death_rate, geometry)
+ 
+# match and replace the data we found for the missing countries with the original data set
+covid_rate[match(missing_countries$admin, covid_rate$admin), ] <- missing_countries
+
+
+```
+
+```{r}
+ggplot(covid_rate, aes(fill = Death_rate)) +
+  geom_sf(color="grey") +
+  scale_fill_gradient(low = "yellow", high = "red",
+    name = "Covid Death rate [%]",
+      breaks = seq(0, 30, by = 5),
+    labels = formatC(seq(0, 30, by = 5), 
+                     big.mark = ",", format = "f", digits = 1)) +
+  theme_map()
+```
+
+That's mildly better, but still disappointing. The countries that are missing on the map either have:
+
+* completely different names that cannot be matched by a partial search (e.g. Czech Republic is called Czechia in the COVID database, "United States" in one data base is "US" in the other).
+* Data might actually be missing (e.g. data for Greenland doesn't exist in the COVID database).
+
+When you  have missing data, the following options are available:
+
+* Exclude all rows or columns that contain missing values using the function na.exclude() or na.omit(). However this can be wasteful because it removes all rows, regardless if the row only has 1 missing value. Additionally, this will leave an empty space in the map.
+* Replace missing values with another value, such as zero, or the mean or median value for that column. Example of such code: *data[is.na(data$column_name), ] <- 0*.
+* Edit data by hand. 
+
+I will replace missing values with averages.
+
+```{r}
+# calculate the average death rate for all countries. Make sure to include na.omit() to exclude NA values from the calculation. 
+averate_death_rate <- mean(na.omit(covid_rate$Death_rate))
+
+#replace na's with the average death rate calculated above
+covid_rate <- covid_rate %>%
+  mutate(Death_rate = ifelse(is.na(Death_rate),averate_death_rate, Death_rate))
+
+```
+
+
+Let's see how that looks...
+
+```{r}
+ggplot(covid_rate, aes(fill = Death_rate)) +
+  geom_sf(color="grey") +
+  scale_fill_gradient(low = "yellow", high = "red",
+    name = "Covid Death rate [%]",
+      breaks = seq(0, 30, by = 5),
+    labels = formatC(seq(0, 30, by = 5), 
+                     big.mark = ",", format = "f", digits = 1)) +
+  theme_map()
+```
+
+
+### 6. Outliers
+
+It looks like one country has significantly larger death rate than the others which is causing the rest to be almost indistinguishable from the others. 
+```{r}
+# the simplest plot funciton in R is plot()
+plot(covid_rate$Death_rate)
+```
+
+Indeed, there's one outlier. What happens with the map if we remov it from the data set?
+
+
+```{r}
+covid_no_max <- covid_rate %>% filter(Death_rate < 25 | is.na(Death_rate))
+```
+
+```{r}
+
+ggplot(covid_no_max, aes(fill = Death_rate)) +
+  geom_sf(color="grey") +
+  scale_fill_gradient(low = "yellow", high = "red",
+    name = "Covid Death rate [%]",
+      breaks = seq(0, 15, by = 3),
+    labels = formatC(seq(0, 15, by = 3), 
+                     big.mark = ",", format = "f", digits = 1)) +
+  theme_map()
+```
+
+Now the map looks a bit better, but the country with the maximum value is now gone from the map, which is not acceptable. Instead, we could manually set the value for the outlier to be equal to the second largest value. That way, we both preserve the maximum value and the differentiation between the countries on the map. 
+
+```{r}
+# find the second largest value in Death_rate
+second_largest <- sort(covid_rate$Death_rate, decreasing = TRUE)[2]
+
+# which.max returns the index of max value in Death_rate column
+outlier_index <- which.max(covid_rate$Death_rate)
+
+# let's replace max with the second largest
+covid_rate[outlier_index,"Death_rate"] <- second_largest
+
+```
+
+```{r}
+
+ggplot(covid_rate, aes(fill = Death_rate)) +
+  geom_sf(color="grey") +
+  scale_fill_gradient(low = "yellow", high = "red",
+    name = "Covid Death rate [%]",
+      breaks = seq(0, 12, by = 3),
+    labels = formatC(seq(0, 12, by = 3), 
+                     big.mark = ",", format = "f", digits = 1)) +
+  theme_map()
+```
+
+
+
