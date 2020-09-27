@@ -40,27 +40,12 @@ For each week's assignment, I've posted (or will have posted) one or more video 
 
 ## Week 3: Projections and distortions
 
-### Written tutorial
-
 [Written tutorial: Projections, transformations, and cartograms](https://vis-2129-f2020.github.io/tutorials/Week3){target="_blank"}
-
-[Friday Discussion: Census data, functions in R and ggplot colors](https://vis-2129-f2020.github.io/tutorials/Data_functions_colors){target="_blank"}
-
-### Video tutorials
-
-[Friday Discussion: Census data and R functions](https://harvard.zoom.us/rec/play/aJNMgFVe6w7GXFgvV8ITrDCC4QCzoC9dac5GaupNLNfKg-yDYgtDe9W3WcwZQyKQcnV6dDVpS8HGjgkL.j75Zv60iwUPiYjxz?autoplay=true&startTime=1600434385000){target="_blank"}
 
 ## Week 4: Points and polygons
 
-### Written tutorial
-
-[Written Tutorial: Relationships between points and polygons](https://vis-2129-f2020.github.io/tutorials/Week4){target="_blank"}
-
-[Friday Discussion: Maps and Projections](https://vis-2129-f2020.github.io/tutorials/Maps_projections){target="_blank"}
-
-### Video tutorials
-
 [Video tutorial: Downloading and loading data from an open data portal into R](https://harvard.zoom.us/rec/share/bwcxR8_MCa8zDh0Wp07W9v8AF5kTSi3wVre_tbqeQkPP8P19BbgSWese-1NdlxQ.OjMA6BPxeSnwHNQ-?startTime=1600374226000){target="_blank}
 
-[Friday Discussion: Maps and Projections](https://harvard.zoom.us/rec/share/3NtyIAFAi_oNaa1ymfhWs8Az50h1nsaVI08J7ITCWCHwhhbPO1Tt3DcKgGhRclt3.86BRkTzbdPzWbNXR?startTime=1601039313000)
+[Video tutorial: Downloading data to local drive, reading from local drive to R, saving as a shapefile, excluding files on local repo from GitHub repo](https://harvard.zoom.us/rec/share/3Eq4Vq__fyDd1qNQQecwfTSCZNSrKsc8umI3WvYQdXWZEsWRxhv1jV3buIWdnKry.RqI5IyPZRQQGTIjZ?startTime=1601143321000){target="_blank"}
 
+[Written Tutorial: Relationships between points and polygons](https://vis-2129-f2020.github.io/tutorials/Week4){target="_blank"}
