@@ -1,0 +1,32 @@
+---
+title: "Network data"
+author: "Carole Voulgaris"
+date: "9/28/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+I'll be using these libraries:
+
+```{r, message=FALSE}
+library(osmdata)
+library(opentripplanner)
+library(tidyverse)
+library(sf)
+```
+
+## Load locations
+
+```{r}
+url <-"https://transitfeeds.com/p/sound-transit/44/latest/download"
+
+temp <- tempfile()
+download.file("http://www.newcl.org/data/zipfiles/a1.zip",temp)
+data <- read.table(unz(temp, "a1.dat"))
+unlink(temp)
+
+```
+
