@@ -16,14 +16,104 @@ library(osmdata)
 library(opentripplanner)
 library(tidyverse)
 library(sf)
+library(ggthemes)
 ```
+
+You'll also need to have Java installed on your computer, since we'll be using a Java application called Open Trip Planner.
 
 ## Load locations
 
-```{r, results='hide'}
-cambridge_polling <- st_read(
-  "data-downloads/ELECTIONS_PollingLocations/ELECTIONS_PollingLocations.shp")
+I'm going to start by importing a KML file from the City of Cambridge's Open Data Portal. This data set shows the locations of the all Cambridge Public Library locations. You can see from the results messages that this is point data with latitude/longitude coordinates.
+
+```{r load library locations}
+CPL_libraries <- st_read(
+  "https://data.cambridgema.gov/api/geospatial/kn2z-b6eg?method=export&format=KML")
 ```
 
+## Get street data and transit data
 
+We'll use Open Trip Planner to find the areas of Cambridge that are within five minutes of a library by walking, by car, and by transit. To start, we need data on the street network. Before doing that, you'll need to do some set-up.
 
+Create a folder in your Repo called OTP. Within that folder, create another folder called graphs. Within *that* folder, create another folder called default. Then find the GTFS feed(s) for the area you're analyzing ([transitfeeds.com](https://transitfeeds.com/){target="_blank"} is a good source) and saved the zipped folder inside the directory called default that you just created.
+
+Next, you can run the following code (but for the area you're analyzing) to download street network data from Open Street Map.
+
+```{r}
+MA_state_plane <- "+proj=lcc +lat_1=41.71666666666667 +lat_2=42.68333333333333 +lat_0=41 +lon_0=-71.5 +x_0=200000 +y_0=750000 +ellps=GRS80 +units=m +no_defs"
+
+cambridge_street_query <- opq(bbox = 'Cambridge MA USA') %>%
+  add_osm_feature(key = 'highway')
+
+cambridge_street_query %>%
+  osmdata_xml(file = 'OTP/graphs/default/cambridge_streets.osm')
+
+cambridge_street_features <- cambridge_street_query %>%
+  osmdata_sf()
+
+cambridge_streets <- cambridge_street_features$osm_lines %>%
+  st_transform(crs = MA_state_plane)
+```
+
+Verify that you now have a file in your default directory called "cambridge_streets.osm", and try plotting the streets you've downloaded. You'll notice that it isn't clipped to the town boundaries. It includes all the roads in the rectangle (bounding box) that contains the town boundaries.
+
+```{r}
+ggplot(cambridge_streets) +
+  geom_sf() +
+  theme_map()
+```
+
+Now we need to download a little java utility called otp.jar and save it to the OPT directory we've created. You only need to run this line once, so you can delete this chunk a
+
+```{r}
+path_otp <- otp_dl_jar("OTP")
+```
+
+Now, we'll build a graph. This is a representation of the street and transit networks.
+
+```{r, message=FALSE, results='hide'}
+path_data <- file.path(getwd(), "OTP")
+path_otp <- paste(path_data, "otp.jar",sep = "/")
+
+otp_build_graph(otp = path_otp, dir = path_data, memory = 1024) 
+```
+
+And now we'll launch Open Trip Planner! After you do this next part, an OTP application will open in you web browser. This indicates that OpenTripPlanner is running, but other than that, you can ignore it.
+
+```{r}
+otp_setup(otp = path_otp, dir = path_data)
+
+# Connect to opentripplanner
+otpcon <- otp_connect()
+
+```
+
+Create Isochrone for area within a ten-minute walk.
+
+```{r}
+iso_10min_walk <- 
+  otp_isochrone(otpcon = otpcon, fromPlace = cambridge_polling_lat_lng, 
+                mode = "walk", cutoffSec = 600) %>%
+  st_transform(crs = st_crs(cambridge_polling))
+```
+
+Plot the isochrone.
+
+```{r}
+right_side <- st_bbox(iso_10min_walk)$xmax
+left_side  <- st_bbox(iso_10min_walk)$xmin
+top_side <- st_bbox(iso_10min_walk)$ymax
+bottom_side <- st_bbox(iso_10min_walk)$ymin
+
+ggplot(iso_10min_walk) +
+  geom_sf(fill = "pink") +
+  geom_sf(data = cambridge_streets) +
+  geom_sf(data = cambridge_polling) +
+  coord_sf(xlim = c(left_side, right_side), 
+           ylim = c(bottom_side, top_side), expand = FALSE) +
+  theme_map()
+```
+
+```{r}
+otp_stop()
+
+```
