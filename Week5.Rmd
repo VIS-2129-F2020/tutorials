@@ -122,7 +122,7 @@ iso_all_modes <- rbind(iso_5min_drive, iso_5min_walk)
 otp_stop()
 ```
 
-Now I can draw a map of these isochrones on a map. I'll use a background image from OpenStreetMap as a basemap (if you do this, always, always, always give attribution to the OpenStreetMap contributors).
+Now I can draw a map of these isochrones on a map. I'll use a background image from OpenStreetMap as a basemap (if you do this, always, always, always give attribution to the OpenStreetMap contributors). You'll also want to add `rosm.cache/` to your .gitignore file.
 
 ```{r, message=FALSE}
 right_side <- st_bbox(iso_all_modes)$xmax

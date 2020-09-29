@@ -61,7 +61,6 @@ For each week's assignment, I've posted (or will have posted) one or more video 
 
 [Friday Discussion: Maps, projections and legends](https://vis-2129-f2020.github.io/tutorials/Maps_projections){target="_blank"}
 
-
 ### Video tutorials
 
 [Video tutorial: Downloading and loading data from an open data portal into R](https://harvard.zoom.us/rec/share/bwcxR8_MCa8zDh0Wp07W9v8AF5kTSi3wVre_tbqeQkPP8P19BbgSWese-1NdlxQ.OjMA6BPxeSnwHNQ-?startTime=1600374226000){target="_blank}
@@ -70,3 +69,8 @@ For each week's assignment, I've posted (or will have posted) one or more video 
 
 [Friday Discussion: Maps, projections and legends](https://harvard.zoom.us/rec/share/3fScm-rL-RbRVvKSUYqBQda2RfDgjooJG-K_HmDJKADkn7Qv_bG0bouk38Kfqgkt.5UZP9YuHQgS-2Qwe?startTime=1601039313000){target="_blank"}
 
+## Week 5: Streets and networks
+
+[Written tutorial](https://vis-2129-f2020.github.io/tutorials/Week5){target="_blank"}
+
+[Video tutorial: Setting up OpenTripPlanner in R](https://harvard.zoom.us/rec/share/KEA-_NybJcVA7UiAmLj7HL1yZovtriee7wU9T82sjXJilUnmqpmizYd0Cq7XQHxS.RDoUzPWLM-3KQ8Vx?startTime=1601409079000){target="_blank"}
