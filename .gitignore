@@ -41,4 +41,5 @@ vignettes/*.pdf
 # Downloaded spatial data
 data-downloads/
 OTP/
+rosm.cache/
 

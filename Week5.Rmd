@@ -2,12 +2,19 @@
 title: "Network data"
 author: "Carole Voulgaris"
 date: "9/28/2020"
-output: html_document
+output: 
+  html_document:
+    theme: cosmo
+    toc: true
+    toc_depth: 3
+    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+This week, we'll be using a Java application called OpenTripPlanner to create isochrones (walksheds and drivesheds) from within R, using the opentripplanner package.
 
 I'll be using these libraries:
 
@@ -17,24 +24,25 @@ library(opentripplanner)
 library(tidyverse)
 library(sf)
 library(ggthemes)
+library(ggspatial)
 ```
 
 You'll also need to have Java installed on your computer, since we'll be using a Java application called Open Trip Planner.
 
 ## Load locations
 
-I'm going to start by importing a KML file from the City of Cambridge's Open Data Portal. This data set shows the locations of the all Cambridge Public Library locations. You can see from the results messages that this is point data with latitude/longitude coordinates.
+I'm going to start by importing a KML file from the City of Cambridge's Open Data Portal. This data set shows the locations of the all Cambridge Public Library locations. You can see from the results messages that this is point data with latitude/longitude coordinates, and we'll keep them that way.
 
 ```{r load library locations}
 CPL_libraries <- st_read(
   "https://data.cambridgema.gov/api/geospatial/kn2z-b6eg?method=export&format=KML")
 ```
 
-## Get street data and transit data
+## Get street data
 
-We'll use Open Trip Planner to find the areas of Cambridge that are within five minutes of a library by walking, by car, and by transit. To start, we need data on the street network. Before doing that, you'll need to do some set-up.
+We'll use Open Trip Planner to find the areas of Cambridge that are within five minutes of a library by walking, by car, and by bike. To start, we need data on the street network. Before doing that, you'll need to do some set-up.
 
-Create a folder in your Repo called OTP. Within that folder, create another folder called graphs. Within *that* folder, create another folder called default. Then find the GTFS feed(s) for the area you're analyzing ([transitfeeds.com](https://transitfeeds.com/){target="_blank"} is a good source) and saved the zipped folder inside the directory called default that you just created.
+Create a folder in your Repo called OTP. Within that folder, create another folder called graphs. Within *that* folder, create another folder called default. Add the OTP directory to your .gitignore file.
 
 Next, you can run the following code (but for the area you're analyzing) to download street network data from Open Street Map.
 
@@ -62,11 +70,14 @@ ggplot(cambridge_streets) +
   theme_map()
 ```
 
-Now we need to download a little java utility called otp.jar and save it to the OPT directory we've created. You only need to run this line once, so you can delete this chunk a
+## Set up Open Trip Planner
+
+Now we need to download a little Java utility called otp.jar and save it to the OPT directory we've created. You only need to run this line once, so you can delete this chunk after you run in - once you confirm that you have a file called otp.jar in your OPT directory on your computer
 
 ```{r}
 path_otp <- otp_dl_jar("OTP")
 ```
+
 
 Now, we'll build a graph. This is a representation of the street and transit networks.
 
@@ -77,43 +88,100 @@ path_otp <- paste(path_data, "otp.jar",sep = "/")
 otp_build_graph(otp = path_otp, dir = path_data, memory = 1024) 
 ```
 
-And now we'll launch Open Trip Planner! After you do this next part, an OTP application will open in you web browser. This indicates that OpenTripPlanner is running, but other than that, you can ignore it.
+And now we'll launch Open Trip Planner! otp_setup may take several minutes to run.
+
+After you do this next part, an OTP application will open in you web browser. This indicates that OpenTripPlanner is running, but other than that, you can ignore it.
 
 ```{r}
-otp_setup(otp = path_otp, dir = path_data)
+otp_setup(otp = path_otp, dir = path_data, memory =1024)
 
 # Connect to opentripplanner
 otpcon <- otp_connect()
 
 ```
 
-Create Isochrone for area within a ten-minute walk.
+## Create isochrones
+
+Create isochrones for areas within a five-minute walk and a five-minute drive.
 
 ```{r}
-iso_10min_walk <- 
-  otp_isochrone(otpcon = otpcon, fromPlace = cambridge_polling_lat_lng, 
-                mode = "walk", cutoffSec = 600) %>%
-  st_transform(crs = st_crs(cambridge_polling))
+iso_5min_walk <- 
+  otp_isochrone(otpcon = otpcon, fromPlace = CPL_libraries, 
+                mode = "WALK", cutoffSec = 300) %>%
+  st_transform(crs = MA_state_plane) %>%
+  mutate(mode = "walk")
+
+iso_5min_drive <- 
+  otp_isochrone(otpcon = otpcon, fromPlace = CPL_libraries, 
+                mode = "CAR", cutoffSec = 300) %>%
+  st_transform(crs = MA_state_plane) %>%
+  mutate(mode = "drive")
+
+iso_all_modes <- rbind(iso_5min_drive, iso_5min_walk)
+
+otp_stop()
 ```
 
-Plot the isochrone.
+Now I can draw a map of these isochrones on a map. I'll use a background image from OpenStreetMap as a basemap (if you do this, always, always, always give attribution to the OpenStreetMap contributors).
 
-```{r}
-right_side <- st_bbox(iso_10min_walk)$xmax
-left_side  <- st_bbox(iso_10min_walk)$xmin
-top_side <- st_bbox(iso_10min_walk)$ymax
-bottom_side <- st_bbox(iso_10min_walk)$ymin
+```{r, message=FALSE}
+right_side <- st_bbox(iso_all_modes)$xmax
+left_side  <- st_bbox(iso_all_modes)$xmin
+top_side <- st_bbox(iso_all_modes)$ymax
+bottom_side <- st_bbox(iso_all_modes)$ymin
 
-ggplot(iso_10min_walk) +
-  geom_sf(fill = "pink") +
-  geom_sf(data = cambridge_streets) +
-  geom_sf(data = cambridge_polling) +
+ggplot(iso_all_modes) +
+  annotation_map_tile(zoomin = 0) +
+  geom_sf(aes(fill = mode), alpha = 0.5) +
+  #geom_sf(data = cambridge_streets) +
+  geom_sf(data = CPL_libraries) +
   coord_sf(xlim = c(left_side, right_side), 
            ylim = c(bottom_side, top_side), expand = FALSE) +
-  theme_map()
+  scale_fill_viridis_d(name = "Area that is reachable within 5 minutes",
+                       labels = c("By car", "By foot")) +
+  theme_map() +
+  labs(caption = "Basemap Copyright OpenStreetMap contributors")
 ```
 
+Alternatively, you could just use the street network as a basemap.
+
 ```{r}
-otp_stop()
+ggplot(iso_all_modes) +
+  geom_sf(data = cambridge_streets, color = "gray") +
+  geom_sf(aes(fill = mode), alpha = 0.5) +
+  geom_sf(data = CPL_libraries) +
+  coord_sf(xlim = c(left_side, right_side), 
+           ylim = c(bottom_side, top_side), expand = FALSE) +
+  scale_fill_viridis_d(name = "Area that is reachable within 5 minutes",
+                       labels = c("By car", "By foot")) +
+  theme_map() 
+```
+
+## Calcuate and compare isochrone areas
+
+I can use `st_area()` to calculate the area of each isochrone and visualize the relationship between the size of a walkshed and the size of a driveshed.
+
+The function `pivot_wider` creates a separate column for each value of a specified variable (in this case, for each mode), so that each row represents a location (with three associated isochrones), rather than having each row represent an isochrone.
+
+It's not a flashy figure, but it is sort of interesting. 
+
+```{r}
+iso_areas <- iso_all_modes %>%
+  mutate(area = st_area(iso_all_modes)) %>%
+  st_set_geometry(NULL) %>%
+  pivot_wider(names_from = mode, values_from = area) 
+
+ggplot(iso_areas, 
+       aes(x = as.numeric(walk), y = as.numeric(drive))) +
+  geom_point() +
+  scale_x_continuous(name = 
+            "Area within a five-minute walking distance\nof a public library\n(square km)",
+            breaks = breaks <- seq(10000, 130000, by = 20000),
+            labels = breaks / 1000000) +
+  scale_y_continuous(name = 
+            "Area within a five-minute driving distance\nof a public library\n(square km)",
+            breaks = breaks <- seq(0, 700000, by = 100000),
+            labels = breaks / 1000000) +
+  theme_bw()
 
 ```
