@@ -1,0 +1,224 @@
+---
+title: "Friday discussion: Geocoding and transit score"
+author: "AB"
+date: "10/2/2020"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE}
+library(osmdata)
+library(opentripplanner)
+library(tidyverse)
+library(sf)
+library(ggthemes)
+library(ggspatial)
+library(sp)
+library(stringr)
+library(rgeos)
+library(tidygeocoder)
+```
+
+In this example, I'll download Boston street network, create isochrones and combine them with the locations of bus stops.
+
+```{r}
+# Download Boston street network data from Open Street Map. 
+
+opq(bbox = 'Boston MA USA') %>%
+  add_osm_feature(key = 'highway') %>%
+  osmdata_xml(file = 'OTP/graphs/default/Boston.osm')
+```
+
+Now, we’ll build a graph and connect to Open Trip Planner.
+
+```{r, message=FALSE, results='hide'}
+
+path_data <- file.path(getwd(), "OTP")
+path_otp <- paste(path_data, "otp.jar",sep = "/")
+
+otp_build_graph(otp = path_otp, dir = path_data, memory = 4096) 
+otp_setup(otp = path_otp, dir = path_data, memory =4096)
+otpcon <- otp_connect()
+
+```
+Once RStudio is connected to Open Trip Planner, we can create isocrones for our selected points of interest. In the [written tutorial](https://vis-2129-f2020.github.io/tutorials/Week5), Carole imported the locations of libraries in Cambridge via url. There are other ways to get the points into R, such as specifying the coordinates, or specifying the address of interest. This tutorial will cover the latter. 
+
+# 1. Geocoding
+
+Geocoding is the process of converting addresses into geographic coordinates. Library tidtgeocoder has a function geo() that does this.
+
+## Single address
+
+```{r}
+# you can geocode a single address
+
+point_A <- geo(address = "48 Quincy Street, Cambridge, MA") 
+print(point_A)
+```
+
+```{r}
+# let's create a 10min isochrone around point_A
+
+point_A_10min_walk <- 
+  otp_isochrone(otpcon = otpcon, fromPlace = c(point_A$long, point_A$lat), 
+                mode = "WALK", cutoffSec = 600)
+```
+```{r, message=FALSE, warning=FALSE}
+# and plot it
+ggplot(point_A_10min_walk) +
+  annotation_map_tile(zoomin = 1, progress = "none") +
+  geom_sf(fill ="blue", alpha=0.2) +
+  theme_map() 
+```
+
+## Multiple addresses
+
+```{r}
+# you can also create a list of addresses and geocode them all at once
+
+address_list = c("125 Oliver Street, Boston, MA", 
+                 "273 Newbury Street, Boston, MA",
+                 "48 Quincy Street, Cambridge, MA")
+points <- geo(address = address_list, mode = "batch") 
+head(points)
+```
+```{r, message=FALSE, warning=FALSE}
+# if input for otp_isochrone() is a single point, you can manually add coordinates to fromPlace, e.g. fromPlace=c(long, lat). However, if you are passing multiple points from a dataframe, you need to have a "geometry" column in the dataframe. The easiest way to do that is:
+
+points <- st_as_sf(x = points,                         
+           coords = c("long", "lat"),
+           crs = 4326)
+```
+```{r}
+# isochrones around our three points
+
+multiple_points_10min_walk <- 
+  otp_isochrone(otpcon = otpcon, fromPlace = points, 
+                mode = "WALK", cutoffSec = 600)
+```
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(multiple_points_10min_walk) +
+  annotation_map_tile(zoomin = 1, progress = "none") +
+  geom_sf(fill ="blue", alpha=0.2) +
+  theme_map() 
+```
+
+
+## 2. Transit score
+
+Let's count the number of bus stops in the walking distance (10min) of our three points in dataframe *points*. Download the locations of the bus stops from MassDOT. 
+
+```{r}
+bus_stops <- st_read("https://opendata.arcgis.com/datasets/55586c8f54954f8e8fae5f40cb953d15_0.kml?outSR=%7B%22latestWkid%22%3A26986%2C%22wkid%22%3A26986%7D",
+                     quiet=TRUE)
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+# we'll use the function st_covers() to count points (bus stations) within a polygon (walkshed) and save the count in a new column *transit_score*.
+
+multiple_points_10min_walk <- multiple_points_10min_walk %>%
+  mutate(transit_score = lengths(st_covers(geometry, bus_stops)))
+```
+```{r, message=FALSE, warning=FALSE}
+ggplot(multiple_points_10min_walk) +
+  annotation_map_tile(zoomin = 1, progress = "none") +
+  geom_sf(aes(fill=transit_score), alpha=.5) +
+  theme_map() 
+```
+
+
+## 3. Bus accessibility map
+
+What if we calculated transit_score, i.e. count the number of bus stops within a 10min walk, for many points in Boston? Then, if we colored each point based on transit_score, we might be able to identify regions with good/bad transit accessibility.
+
+
+I will first import Boston neighborhoods and then cover them with a bunch of points.
+
+```{r}
+# get Boston neighborhoods
+
+nhoods <- st_read("http://bostonopendata-boston.opendata.arcgis.com/datasets/3525b0ee6e6b427f9aab5d0a1d0a1a28_0.kml?outSR=%7B%22latestWkid%22%3A2249%2C%22wkid%22%3A102686%7D", 
+                  quiet = TRUE) 
+
+# this function transforms nhoods object, which is currently a simple feature (sf) into a spatial (sp) object. I need to do this because the the function spsample(), used in the next code chunk, requires an sp object.
+nhoods1 <- as(nhoods, "Spatial")
+
+```
+
+**Note that I have not transformed any of the variables I've been using, they are all in lat/long format. I can get away with that because I am not using or calculating distances. The function st_covers assumes the polygons and points are in planar coordinates (i.e. transformed to a local coordinate system), but as long as everything is in the same coordinate system, you should be fine. In the previous assignment, we couldn't do that since we were using function buffer that requires a distance as an input.**
+
+```{r}
+plot(nhoods1)
+```
+
+Let's cover Boston with many points around which I'll create isocrhones and count the number of bus stops within each of those isochrones. Same thing as in the previous chapter, only for a thousand points instead of three. 
+```{r, message=FALSE, warning=FALSE}
+# function spsample() creates n points in a polygon. type='regular' creates points along a grid, while type='random' creates randomly positioned points.
+
+points <-spsample(nhoods1, n=1000, type='regular')
+```
+
+```{r}
+plot(points)
+```
+```{r}
+# make a dataframe of points (otp_isochrone takes a df as an input)
+points <- st_as_sf(x = points,                         
+           coords = coords,
+           crs = 4326)
+```
+
+```{r, message=FALSE, warning=FALSE}
+# create a 10min walkshed around each point in "points" dataframe
+iso_10min_walk <- 
+  otp_isochrone(otpcon = otpcon, fromPlace = points, 
+                mode = "WALK", cutoffSec = 600)
+```
+
+```{r, message=FALSE}
+otp_stop()
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+# count the number of bus stops in the 10min polygons
+iso_10min_walk <- iso_10min_walk %>%
+  mutate(transit_score = lengths(st_covers(geometry, bus_stops)))
+
+```
+
+Now we have iso_10min_walk dataframe with *geometry* column which contains polygons, *fromPlace* column which contains lat,long pasted together as a string (characters), and *transit_score* column, which is the number of bus stops in the polygon. I would like to plot only the points with transit_scores, but I first need to extract coordinates from fromPlace column (which is currently a text).
+
+```{r}
+# create a new dataframe with coordinates and transit_scores. 
+
+out <- data.frame(str_split_fixed(iso_10min_walk$fromPlace, ",", 2))
+
+out <- st_as_sf(x = out,                         
+           coords = c("X2", "X1"),
+           crs = 4326)
+  
+out$transit_score <- iso_10min_walk$transit_score
+
+```
+
+
+
+```{r}
+ggplot(nhoods) +
+  geom_sf(fill="NA", color="grey")+
+  geom_sf(data = out, aes(color=transit_score))+
+  scale_color_gradientn(name="Number of bus stops\nwithin a 10 min walk", colors=c("red", "yellow", "green"))+
+  theme_map()+
+  theme(legend.position = c(.7,0),
+        plot.title = element_text(hjust = 0.5))+
+  labs(title = "Bus Acessibility Map")
+```
+
+
