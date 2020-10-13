@@ -50,6 +50,8 @@ nhood_image <- stack("hand-drawn-map_georef.tif")
 ggRGB(nhood_image, r = 1, g = 2, b = 3)
 ```
 
+## Plot georeferenced image with downloaded vector data
+
 For your assignment, you'll need to plot the georeferenced image on the same map with a layer of digital data. I can still use `ggRGB()` for this, but I need to set the argument `ggLayer = TRUE` to indicate that I'm adding the layer to a ggplot object.
 
 I'll draw the streets layer on top of the image, but I'll make it mostly transparent (`alpha = 0.2`) so that you can still read the image under it.
