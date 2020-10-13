@@ -67,7 +67,8 @@ ggplot(cambridge_streets) +
            ylim = c(nhood_image@extent@ymin, nhood_image@extent@ymax)) +
   theme_map() +
   annotation_scale() +
-  annotation_north_arrow(location = "tr")
+  annotation_north_arrow(location = "tr") +
+  labs(caption = "Street netowrk data Copyright OpenStreetMap contributors")
 ```
 
 In your assignment, I'd love to see some commentary on what you've chosen to show and/or emphasize in your hand-drawn map and how the message of your map might be different from what you could have created using outside data sources alone.
