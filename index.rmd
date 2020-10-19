@@ -1,0 +1,92 @@
+---
+title: "Assignment tutorials"
+author: "Carole Voulgaris"
+date: "9/3/2020"
+output: 
+  html_document:
+    theme: cosmo
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+For each week's assignment, I've posted (or will have posted) one or more video tutorials and a written tutorial here. Since R is a script-based program, the written tutorials will often be sufficient for assignments that will be completed in R (most assignments), but the video tutorials may be useful to you as you begin to familiarize yourself with the RStudio interface.
+
+## Week 2: Relationships and distributions
+
+### Written tutorial
+
+[Written tutorial: ggplot2 and tidycensus packages](https://vis-2129-f2020.github.io/tutorials/Week2){target="_blank"}
+
+[Bonus tutorial: Fonts](https://vis-2129-f2020.github.io/tutorials/fonts){target="_blank"}
+
+### Video tutorials
+
+[Video tutorial 1: Installing Git, R, and RStudio (PC)](https://harvard.zoom.us/rec/share/5tZOLbb612BOHJ3g1xz2X_9-Jb7LT6a80HdP__BfxEvMfboEVuMLawEevGOMkjGY){target="_blank"}
+
+[Video tutorial 2: Installing Git, R, and RStudio (Mac)](https://harvard.zoom.us/rec/share/3fJfJaDXqUZOcq_ctVDTB7QdGoOmeaa803AYq_ZczhmRAfNlvwCqkZXzZAyU5x01?startTime=1597759465000){target="_blank"}
+
+[Video tutorial 3: Starting an R project from a GitHub repo](https://harvard.zoom.us/rec/play/6ZZ8f-ypqzs3G9DHtwSDBvN-W42_Kv2s1iEe-PZfz0u2BnYHMAKnbrUTMOFMF5vL7wloYpfsmqy2CQhB?startTime=1597255620000){target="_blank"}
+
+[Video tutorial 4: Installing packages and finding data in tidycensus](https://harvard.zoom.us/rec/play/uMF7dbyhrjs3S4bH4wSDV_ArW43pf_is0SIe8_IJyUy0AXUCMFWnNLRGZBnHvZlAASFiVk9BmR0M0-Y){target="_blank"}
+
+[Video tutorial 5: Scatterplots in ggplot2](https://harvard.zoom.us/rec/share/QN48XemtFrumI1uqufxZ_PrbCXt92W509cyRgLMm3L1DQpXe3PY0bwCvis-XS-L6.6fG7OvcnDY1-BFDf?startTime=1599599753000){target="_blank"}
+
+[Video tutorial 6: Categorical variables in ggplot2](https://harvard.zoom.us/rec/share/o5BX92IHpqNkxAHAupag22xGJAYSf9jK2JXAjGTARkxrBPvEbrI6cWQeVyUhP1Km.-GZ39wGpnAr_j-m8?startTime=1599601247000){target="_blank"}
+
+[Video tutorial 7: Submitting an assignment on GitHub by creating an Issue](https://harvard.zoom.us/rec/share/tPZrKoHv3HhJSNLr5HjhWpQ6JLiiaaa80XMWrqAMzEasqM6unaAPJGYp0hGlENNg?startTime=1598978835000){target="_blank"}
+
+[Friday Discussion: R and GIS to Illustrator workflow and ggthemes](https://harvard.zoom.us/rec/share/kRAGjneuqvVZRML2IyO-uQdwhlfqE3sQHHPeTha0ic8tomjRThYuq0fb8EsEWMC3.95xDP7PFoX82VPqp?startTime=1599829600000){target="_blank"}
+
+## Week 3: Projections and distortions
+
+### Written tutorials
+
+[Written tutorial: Projections, transformations, and cartograms](https://vis-2129-f2020.github.io/tutorials/Week3){target="_blank"}
+
+[Friday Discussion: Census Data, Functions in R and Colors](https://vis-2129-f2020.github.io/tutorials/Data_functions_colors){target="_blank"}
+
+### Video tutorials
+
+[Friday Discussion: Census data](https://harvard.zoom.us/rec/share/oYYlEJbSHiCSdBelHqDQxXDswuNq-AiYwCopjGypyqvLM0btAAgl0aEEn2CEZh48.-MDnzAyQEiRyy293?startTime=1600434385000){target="_blank"}
+
+
+## Week 4: Points and polygons
+
+### Written tutorial
+
+[Written Tutorial: Relationships between points and polygons](https://vis-2129-f2020.github.io/tutorials/Week4){target="_blank"}
+
+[Written Tutorial: Data Cleaning](https://vis-2129-f2020.github.io/tutorials/Data_cleaning){target="_blank"}
+
+[Friday Discussion: Maps, projections and legends](https://vis-2129-f2020.github.io/tutorials/Maps_projections){target="_blank"}
+
+### Video tutorials
+
+[Video tutorial: Downloading and loading data from an open data portal into R](https://harvard.zoom.us/rec/share/bwcxR8_MCa8zDh0Wp07W9v8AF5kTSi3wVre_tbqeQkPP8P19BbgSWese-1NdlxQ.OjMA6BPxeSnwHNQ-?startTime=1600374226000){target="_blank}
+
+[Video tutorial: Downloading data to local drive, reading from local drive to R, saving as a shapefile, excluding files on local repo from GitHub repo](https://harvard.zoom.us/rec/share/3Eq4Vq__fyDd1qNQQecwfTSCZNSrKsc8umI3WvYQdXWZEsWRxhv1jV3buIWdnKry.RqI5IyPZRQQGTIjZ?startTime=1601143321000){target="_blank"}
+
+[Friday Discussion: Maps, projections and legends](https://harvard.zoom.us/rec/share/3fScm-rL-RbRVvKSUYqBQda2RfDgjooJG-K_HmDJKADkn7Qv_bG0bouk38Kfqgkt.5UZP9YuHQgS-2Qwe?startTime=1601039313000){target="_blank"}
+
+## Week 5: Streets and networks
+
+[Written tutorial: Open Trip Planner, streets and networks](https://vis-2129-f2020.github.io/tutorials/Week5){target="_blank"}
+
+[Video tutorial: Setting up OpenTripPlanner in R](https://harvard.zoom.us/rec/share/KEA-_NybJcVA7UiAmLj7HL1yZovtriee7wU9T82sjXJilUnmqpmizYd0Cq7XQHxS.RDoUzPWLM-3KQ8Vx?startTime=1601409079000){target="_blank"}
+
+[Written tutorial: Geocoding and transit score - Friday discussion](https://vis-2129-f2020.github.io/tutorials/Geocoding){target="_blank"}
+
+## Week 7: Georeferencing images
+
+[Video tutorial 1: Downloading Census TIGER features](https://harvard.zoom.us/rec/share/aBJNj2W3bBHIMC6LH2vsUZOlBny03lM3IcNSc0pPCs3Fquz8kaQIchTUkbYItAdM.pZO15jXaKyYj9HIn?startTime=1602525515000){target="_blank"}
+
+[Video tutorial 2: Georeferencing an image in ArcMap](https://harvard.zoom.us/rec/share/7zrQhGm961Oc5PBcL6nuISmrUlubFPllRHUf1ETicgIXSSruNOPoqalimq0S_yGz.LvO_8BBMfmY_54lI?startTime=1602527007000){target="_blank"}
+
+[Video tutorial 3: Georeferencing an image in QGIS](https://harvard.zoom.us/rec/share/jPcx5qb3WRaosdKDWgDjKFgaLMPtkjYkNcyOzGFG7qmIDmg5rJ06IhHuiWo8Kjn_.T-ws0hEG3e1gBrMI?startTime=1602622287000){target="_blank"}
+
+[Video tutorial 4: Georeferencing an image in ArcGIS Pro](https://harvard.zoom.us/rec/share/TruZkY4n-1zoylfrUpbc8MBSSIrW3j07DTqnCHAtLqCUYrl-0ZcM8HCc3K5lGTm2.seGOOjpp0slak0x3?startTime=1602621784000){target="_blank"}
+
+[Written tutorial: Displaying raster layers in R](https://vis-2129-f2020.github.io/tutorials/Week7.html){target="_blank"}
+
+[Video tutorial: Friday discussion](https://harvard.zoom.us/rec/share/SR2gYQrq7tz2sIKNMREPr3Ray50gANZ8vhKKv24TnN8u-sFg6c1rtzmOqDlC1veP.srEQawe6x_ubONk2?startTime=1602853648000){target="_blank"}
