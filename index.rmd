@@ -88,3 +88,5 @@ For each week's assignment, I've posted (or will have posted) one or more video 
 [Video tutorial 4: Georeferencing an image in ArcGIS Pro](https://harvard.zoom.us/rec/share/TruZkY4n-1zoylfrUpbc8MBSSIrW3j07DTqnCHAtLqCUYrl-0ZcM8HCc3K5lGTm2.seGOOjpp0slak0x3?startTime=1602621784000){target="_blank"}
 
 [Written tutorial: Displaying raster layers in R](https://vis-2129-f2020.github.io/tutorials/Week7.html){target="_blank"}
+
+[Video tutorial: Friday discussion](https://harvard.zoom.us/rec/share/SR2gYQrq7tz2sIKNMREPr3Ray50gANZ8vhKKv24TnN8u-sFg6c1rtzmOqDlC1veP.srEQawe6x_ubONk2?startTime=1602853648000){target="_blank"}
