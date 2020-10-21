@@ -36,39 +36,53 @@ parks <- st_read("https://data.seattle.gov/api/geospatial/ptpk-refv?method=expor
   mutate(name = ifelse(is.na(name), "unnamed", name))
 ```
 
+## Displaying polygons on a Leaflet map
+
 Now I'll draw the park polygons on a leaflet map so you can pan around and zoom in on the parts of Seattle where you want to see the parks in more detail. 
 
 `addProviderTiles()` adds an basemap to your leaflet object, and you can choose among many alternative basemap styles.
 
 `addPolygons()` adds my park polygons to the leaflet map. `fillColor = "green"` shades the polygons green and `stroke = FALSE` prevents R from drawing an outline around the polygons.
 
+I'm also using `addControl` to add a title to the top right corner of my map and link to the data source in the bottom left corner.
+
 I can display the map within my Rmarkdown file by typing the name of the leaflet object I just created. 
 
-I can also use `saveWidget()` to save my map as a stand-alone html file called "parks1.html." Once I've committed that file to GitHub (since my repo has GitHub Pages enabled, as does yours), it will be available to view on the internet here: [https://vis-2129-f2020.github.io/tutorials/parks1.html](https://vis-2129-f2020.github.io/tutorials/parks1.html){target="_blank"}
-
 ```{r}
-parks_map1 = leaflet(parks) %>%
+parks_map1 <- leaflet(parks) %>%
   addProviderTiles(providers$Stamen.TonerLite) %>%
-  addPolygons(fillColor = "green", stroke = FALSE)
+  addPolygons(fillColor = "green", stroke = FALSE) %>%
+  addControl("Park Locations in Seattle", position = "topright") %>%
+  addControl('<a href="https://data.seattle.gov/Parks-and-Recreation/Seattle-Parks-and-Recreation-GIS-Map-Layer-Shapefi/ptpk-refv">Data source</a>',
+             position = "bottomleft")
 
 parks_map1
-saveWidget(parks_map1, file="parks1.html")
 ```
 
-I can add `highlightOptions` to the `addPolygons()` function to change the color and opacity of a park when I hover my cursor over it. Again, I can save my map as a stand-alone html file, which I can view here: [https://vis-2129-f2020.github.io/tutorials/parks2.html](https://vis-2129-f2020.github.io/tutorials/parks2.html){target="_blank"} 
+### More interactivity: highlighting
+
+I can add `highlightOptions` to the `addPolygons()` function to change the color and opacity of a park when I hover my cursor over it. 
+
+I'll use a different basemap this time, just so you can see what it looks like.
 
 ```{r}
-parks_map2 = leaflet(parks) %>%
-  addProviderTiles(providers$Stamen.TonerLite) %>%
+parks_map2 <- leaflet(parks) %>%
+  addProviderTiles(providers$CartoDB) %>%
   addPolygons(fillColor = "green", stroke = FALSE,
               highlightOptions = highlightOptions(fillColor = "darkgreen", 
-                                                  fillOpacity = 1))
+                                                  fillOpacity = 1)) %>%
+  addControl("Park Locations in Seattle", position = "topright") %>%
+  addControl('<a href="https://data.seattle.gov/Parks-and-Recreation/Seattle-Parks-and-Recreation-GIS-Map-Layer-Shapefi/ptpk-refv">Data source</a>',
+             position = "bottomleft")
 
 parks_map2
-saveWidget(parks_map2, file="parks2.html")
 ```
 
+### More interactivity: Labels
+
 I can also create a label that shows the name of the park and its size in acres. I can set the `label` value in `addPolygons()` so that the label will display when I hover over the map. 
+
+I'll also try out a different basemap here. This one is a little confusing because it includes some green areas that aren't actually part of our parks dataset.
 
 ```{r}
 parks$describe <- 
@@ -76,60 +90,105 @@ parks$describe <-
                prettyNum(parks$acres, digits = 2), " acres") %>% 
   lapply(htmltools::HTML)
 
-parks_map3 = leaflet(parks) %>%
-  addProviderTiles(providers$Stamen.TonerLite) %>%
+parks_map3 <- leaflet(parks) %>%
+  addProviderTiles(providers$CartoDB.Voyager) %>%
   addPolygons(fillColor = "green", stroke = FALSE,
               highlightOptions = highlightOptions(fillColor = "darkgreen", 
                                                   fillOpacity = 1),
-              label = ~describe)
+              label = ~describe) %>%
+  addControl("Park Locations in Seattle", position = "topright") %>%
+  addControl('<a href="https://data.seattle.gov/Parks-and-Recreation/Seattle-Parks-and-Recreation-GIS-Map-Layer-Shapefi/ptpk-refv">Data source</a>',
+             position = "bottomleft")
 
 parks_map3
-saveWidget(parks_map3, file="parks3.html")
 ```
+
+### More interactivity: Pop-ups
 
 I might want the label to only appear when I click on a polygon, rather than when I just hover over it. In that case, I'll use `popup` rather than `label`.
 
+I'll also try out a different basemap here. There's the same issue as the previous map where it's hard to differentiate between the green polygons and the green areas of the basemap.
+
 ```{r}
-parks_map4 = leaflet(parks) %>%
-  addProviderTiles(providers$Stamen.TonerLite) %>%
+parks_map4 <- leaflet(parks) %>%
+  addProviderTiles(providers$Stamen.Watercolor) %>%
   addPolygons(fillColor = "green", stroke = FALSE,
               highlightOptions = highlightOptions(fillColor = "darkgreen", 
                                                   fillOpacity = 1),
-              popup = ~describe)
+              popup = ~describe) %>%
+  addControl("Park Locations in Seattle", position = "topright") %>%
+  addControl('<a href="https://data.seattle.gov/Parks-and-Recreation/Seattle-Parks-and-Recreation-GIS-Map-Layer-Shapefi/ptpk-refv">Data source</a>',
+             position = "bottomleft")
 
 parks_map4
-saveWidget(parks_map4, file="parks4.html")
 ```
 
-## Load georeferenced image
+## Displaying points on a Leaflet map
 
-Now I'll load the georeferenced image I created in ArcMap, ArcGIS Pro, or QGIS, as shown in the video tutorials for this week. I can use the function `ggRGB` to plot the image. The r, g, and b arguments tell R which of the three image layers represent red, green, and blue, respectively.
+Maybe the data I want to show are points rather than polygons. To demonstrate this, I'll just create a set of points from the park centroids.
+
+```{r, warning=FALSE}
+park_pts <- st_centroid(parks)
+```
+
+### Points as markers
+
+I'll start by showing the points as markers. It looks pretty messy unless you zoom in.
+
+``` {r}
+parks_map5 <- leaflet(park_pts) %>%
+  addProviderTiles(providers$OpenStreetMap) %>%
+  addMarkers(popup = ~describe) %>%
+  addControl("Park Locations in Seattle", position = "topright") %>%
+  addControl('<a href="https://data.seattle.gov/Parks-and-Recreation/Seattle-Parks-and-Recreation-GIS-Map-Layer-Shapefi/ptpk-refv">Data source</a>',
+             position = "bottomleft")
+
+parks_map5
+```
+
+### Points as circles
+
+It might look cleaner to show the points as little circles.
 
 ```{r}
-nhood_image <- stack("hand-drawn-map_georef.tif")
+parks_map6 <- leaflet(park_pts) %>%
+  addProviderTiles(providers$Stamen) %>%
+  addCircles(fillColor = "green", color = "green", 
+             stroke = FALSE, radius = 200,
+              highlightOptions = highlightOptions(fillColor = "darkgreen", 
+                                                  fillOpacity = 1),
+              popup = ~describe) %>%
+  addControl("Park Locations in Seattle", position = "topright") %>%
+  addControl('<a href="https://data.seattle.gov/Parks-and-Recreation/Seattle-Parks-and-Recreation-GIS-Map-Layer-Shapefi/ptpk-refv">Data source</a>',
+             position = "bottomleft")
 
-ggRGB(nhood_image, r = 1, g = 2, b = 3)
+parks_map6
 ```
 
-## Plot georeferenced image with downloaded vector data
+### Points as circles of varying sizes
 
-For your assignment, you'll need to plot the georeferenced image on the same map with a layer of digital data. I can still use `ggRGB()` for this, but I need to set the argument `ggLayer = TRUE` to indicate that I'm adding the layer to a ggplot object.
-
-I'll draw the streets layer on top of the image, but I'll make it mostly transparent (`alpha = 0.2`) so that you can still read the image under it.
-
-I'll use `coord_sf()` to "zoom in" on the part of the map where the image is. 
+I can also vary the sizes of the circles based on the area of the park.
 
 ```{r}
-ggplot(cambridge_streets) +
-  ggRGB(nhood_image, 
-        r = 1, g = 2, b = 3, ggLayer = TRUE) +
-  geom_sf(alpha = 0.2) +
-  coord_sf(xlim = c(nhood_image@extent@xmin, nhood_image@extent@xmax),
-           ylim = c(nhood_image@extent@ymin, nhood_image@extent@ymax)) +
-  theme_map() +
-  annotation_scale() +
-  annotation_north_arrow(location = "tr") +
-  labs(caption = "Street netowrk data Copyright OpenStreetMap contributors")
+parks_map7 <- leaflet(park_pts) %>%
+  addProviderTiles(providers$Stamen) %>%
+  addCircles(fillColor = "green", color = "green", 
+             stroke = FALSE, radius = ~acres,
+              highlightOptions = highlightOptions(fillColor = "darkgreen", 
+                                                  fillOpacity = 1),
+              popup = ~describe) %>%
+  addControl("Park Locations in Seattle", position = "topright") %>%
+  addControl('<a href="https://data.seattle.gov/Parks-and-Recreation/Seattle-Parks-and-Recreation-GIS-Map-Layer-Shapefi/ptpk-refv">Data source</a>',
+             position = "bottomleft")
+
+parks_map7
 ```
 
-In your assignment, I'd love to see some commentary on what you've chosen to show and/or emphasize in your hand-drawn map and how the message of your map might be different from what you could have created using outside data sources alone.
+## Saving a separate html file
+
+I can use the `saveWidget()` function to save any of my leaflet maps as in its own html file. You can view the file you save my opening it in your web browser. Once you've pushed the file to GitHub, you'll be able to see it on the internet the same way you see any of your assignment html files. You can see the one I created below here: [https://vis-2129-f2020.github.io/tutorials/parks](https://vis-2129-f2020.github.io/tutorials/parks){target="_blank"}
+
+```{r}
+saveWidget(parks_map7, file = "parks.html")
+```
+
