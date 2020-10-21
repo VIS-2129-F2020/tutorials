@@ -1,0 +1,34 @@
+---
+title: "Examples of Interactive Maps"
+author: "Carole Voulgaris"
+date: "10/20/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Some example of interactive maps
+*Compiled from [Planetizen](https://www.planetizen.com/tag/interactive-maps)*
+
+Look through some of the interactive maps listed below? What are the authors of each trying to achieve? How effective are these maps? How could they be more effective?
+
+[Vacant and underutilized land in Miami-Dade County](http://land.ccs.miami.edu/explore/parcels){target="_blank"}
+
+[Forecasting telework](http://septa.nittany-ai-associates.com/){target="_blank"}
+
+[Assessing economic development](http://evatool.oregonmetro.gov/){target="_blank"}
+
+[Transit ridership trends](https://insights.transitcenter.org/){target="_blank"}
+
+[Potential impacts of upzoning near transit (SB 50)](http://upzoning.berkeley.edu/station_neighborhoods.html){target="_blank"}
+
+[Inequities in air pollution exposure](https://www.ucsusa.org/resources/inequitable-exposure-air-pollution-vehicles-california-2019){target="_blank"}
+
+[Flood risk](https://headwaterseconomics.org/apps/neighborhoods-at-risk/){target="_blank"}
+
+[Neighborhood change](https://www.jchs.harvard.edu/boston-neighborhood-change-interactive-map#/boston-map/recommended-maps){target="_blank"}
+
+
+
