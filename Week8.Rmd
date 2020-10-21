@@ -28,25 +28,77 @@ library(htmlwidgets)
 
 ## Read in data
 
-First, I'll download a set of polygons representing all the parks in Seattle. I'll add a field to indicate the area of each park in acres (`st_area()` calculates the area in square meters, and there are 4046.86 square meters in an acre).
+First, I'll download a set of polygons representing all the parks in Seattle. I'll add a field to indicate the area of each park in acres (`st_area()` calculates the area in square meters, and there are 4046.86 square meters in an acre). One of the parks has an `NA` value for its name, so I'll replace that name with "unnamed".
 
 ```{r, message = FALSE, results='hide'}
 parks <- st_read("https://data.seattle.gov/api/geospatial/ptpk-refv?method=export&format=GeoJSON") %>%
-  mutate(acres = as.numeric(st_area(geometry)) / 4046.86)
+  mutate(acres = as.numeric(st_area(geometry)) / 4046.86) %>%
+  mutate(name = ifelse(is.na(name), "unnamed", name))
 ```
 
-Now I'll draw the park polygons on a leaflet map so you can pan around and zoom in on the parts of Seattle where you want to see the parks in more detail. I can display the map within my Rmarkdown file, and I can also save it as a stand-alone html file called "parks1.html." Once I've committed that file to GitHub (since my repo has GitHub Pages enabled, as does yours), it will be available to view on the internet here: []
+Now I'll draw the park polygons on a leaflet map so you can pan around and zoom in on the parts of Seattle where you want to see the parks in more detail. 
+
+`addProviderTiles()` adds an basemap to your leaflet object, and you can choose among many alternative basemap styles.
+
+`addPolygons()` adds my park polygons to the leaflet map. `fillColor = "green"` shades the polygons green and `stroke = FALSE` prevents R from drawing an outline around the polygons.
+
+I can display the map within my Rmarkdown file by typing the name of the leaflet object I just created. 
+
+I can also use `saveWidget()` to save my map as a stand-alone html file called "parks1.html." Once I've committed that file to GitHub (since my repo has GitHub Pages enabled, as does yours), it will be available to view on the internet here: [https://vis-2129-f2020.github.io/tutorials/parks1.html](https://vis-2129-f2020.github.io/tutorials/parks1.html){target="_blank"}
 
 ```{r}
 parks_map1 = leaflet(parks) %>%
   addProviderTiles(providers$Stamen.TonerLite) %>%
-  addPolygons(fillColor = "green", stroke = FALSE,
-              highlightOptions = highlightOptions(fillColor = "darkgreen", 
-                                                  fillOpacity = 1),
-              label = ~htmlEscape(name))
+  addPolygons(fillColor = "green", stroke = FALSE)
 
 parks_map1
 saveWidget(parks_map1, file="parks1.html")
+```
+
+I can add `highlightOptions` to the `addPolygons()` function to change the color and opacity of a park when I hover my cursor over it. Again, I can save my map as a stand-alone html file, which I can view here: [https://vis-2129-f2020.github.io/tutorials/parks2.html](https://vis-2129-f2020.github.io/tutorials/parks2.html){target="_blank"} 
+
+```{r}
+parks_map2 = leaflet(parks) %>%
+  addProviderTiles(providers$Stamen.TonerLite) %>%
+  addPolygons(fillColor = "green", stroke = FALSE,
+              highlightOptions = highlightOptions(fillColor = "darkgreen", 
+                                                  fillOpacity = 1))
+
+parks_map2
+saveWidget(parks_map2, file="parks2.html")
+```
+
+I can also create a label that shows the name of the park and its size in acres. I can set the `label` value in `addPolygons()` so that the label will display when I hover over the map. 
+
+```{r}
+parks$describe <- 
+  paste(parks$name, "<br>", 
+               prettyNum(parks$acres, digits = 2), " acres") %>% 
+  lapply(htmltools::HTML)
+
+parks_map3 = leaflet(parks) %>%
+  addProviderTiles(providers$Stamen.TonerLite) %>%
+  addPolygons(fillColor = "green", stroke = FALSE,
+              highlightOptions = highlightOptions(fillColor = "darkgreen", 
+                                                  fillOpacity = 1),
+              label = ~describe)
+
+parks_map3
+saveWidget(parks_map3, file="parks3.html")
+```
+
+I might want the label to only appear when I click on a polygon, rather than when I just hover over it. In that case, I'll use `popup` rather than `label`.
+
+```{r}
+parks_map4 = leaflet(parks) %>%
+  addProviderTiles(providers$Stamen.TonerLite) %>%
+  addPolygons(fillColor = "green", stroke = FALSE,
+              highlightOptions = highlightOptions(fillColor = "darkgreen", 
+                                                  fillOpacity = 1),
+              popup = ~describe)
+
+parks_map4
+saveWidget(parks_map4, file="parks4.html")
 ```
 
 ## Load georeferenced image
