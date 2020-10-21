@@ -1,0 +1,83 @@
+---
+title: "Interactive maps"
+author: "Carole Voulgaris"
+date: "10/21/2020"
+output: 
+  html_document:
+    theme: cosmo
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libaries
+
+These are the libraries I'm using today:
+
+```{r, message=FALSE}
+library(tidyverse)
+library(sf)
+library(leaflet)
+library(htmltools)
+library(htmlwidgets)
+```
+
+## Read in data
+
+First, I'll download a set of polygons representing all the parks in Seattle. I'll add a field to indicate the area of each park in acres (`st_area()` calculates the area in square meters, and there are 4046.86 square meters in an acre).
+
+```{r, message = FALSE, results='hide'}
+parks <- st_read("https://data.seattle.gov/api/geospatial/ptpk-refv?method=export&format=GeoJSON") %>%
+  mutate(acres = as.numeric(st_area(geometry)) / 4046.86)
+```
+
+Now I'll draw the park polygons on a leaflet map so you can pan around and zoom in on the parts of Seattle where you want to see the parks in more detail. I can display the map within my Rmarkdown file, and I can also save it as a stand-alone html file called "parks1.html." Once I've committed that file to GitHub (since my repo has GitHub Pages enabled, as does yours), it will be available to view on the internet here: []
+
+```{r}
+parks_map1 = leaflet(parks) %>%
+  addProviderTiles(providers$Stamen.TonerLite) %>%
+  addPolygons(fillColor = "green", stroke = FALSE,
+              highlightOptions = highlightOptions(fillColor = "darkgreen", 
+                                                  fillOpacity = 1),
+              label = ~htmlEscape(name))
+
+parks_map1
+saveWidget(parks_map1, file="parks1.html")
+```
+
+## Load georeferenced image
+
+Now I'll load the georeferenced image I created in ArcMap, ArcGIS Pro, or QGIS, as shown in the video tutorials for this week. I can use the function `ggRGB` to plot the image. The r, g, and b arguments tell R which of the three image layers represent red, green, and blue, respectively.
+
+```{r}
+nhood_image <- stack("hand-drawn-map_georef.tif")
+
+ggRGB(nhood_image, r = 1, g = 2, b = 3)
+```
+
+## Plot georeferenced image with downloaded vector data
+
+For your assignment, you'll need to plot the georeferenced image on the same map with a layer of digital data. I can still use `ggRGB()` for this, but I need to set the argument `ggLayer = TRUE` to indicate that I'm adding the layer to a ggplot object.
+
+I'll draw the streets layer on top of the image, but I'll make it mostly transparent (`alpha = 0.2`) so that you can still read the image under it.
+
+I'll use `coord_sf()` to "zoom in" on the part of the map where the image is. 
+
+```{r}
+ggplot(cambridge_streets) +
+  ggRGB(nhood_image, 
+        r = 1, g = 2, b = 3, ggLayer = TRUE) +
+  geom_sf(alpha = 0.2) +
+  coord_sf(xlim = c(nhood_image@extent@xmin, nhood_image@extent@xmax),
+           ylim = c(nhood_image@extent@ymin, nhood_image@extent@ymax)) +
+  theme_map() +
+  annotation_scale() +
+  annotation_north_arrow(location = "tr") +
+  labs(caption = "Street netowrk data Copyright OpenStreetMap contributors")
+```
+
+In your assignment, I'd love to see some commentary on what you've chosen to show and/or emphasize in your hand-drawn map and how the message of your map might be different from what you could have created using outside data sources alone.

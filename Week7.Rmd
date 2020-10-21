@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Load libaries
 
-These are the libaries I'm using today:
+These are the libraries I'm using today:
 
 ```{r, message=FALSE}
 library(raster)
