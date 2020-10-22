@@ -1,0 +1,163 @@
+---
+title: 'Week 9: Raster interpolation'
+author: "Carole Voulgaris"
+date: "10/21/2020"
+output: 
+  html_document:
+    theme: cosmo
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Load libraries
+
+These are the libraries I'll be using in this tutorial. 
+
+```{r, message=FALSE}
+library(tidyverse)
+library(sf)
+library(leaflet)
+library(htmltools)
+library(htmlwidgets)
+library(raster)
+library(gstat)
+library(spatial)
+```
+
+
+## Dataset
+
+Cambridge maintains neighborhood level data on COVID case rates (the number of cases per 10,000 residents), which you can view [here](https://cityofcambridge.shinyapps.io/COVID19/) (click on "Neighborhood Map" on the left sidebar). 
+
+## Visualizing differences among neighborhoods.
+
+I can create my own version of the Cambridge COVID neighborhood map. I'll start by downloading neighborhood boundaries from the city's open data portal and displaying those boundaries on a leaflet map.
+
+```{r, message = FALSE, warning=FALSE}
+cambridge_nhoods <- st_read("https://data.cambridgema.gov/api/geospatial/4ys2-ebga?method=export&format=GeoJSON", quiet = TRUE) %>%
+  dplyr::select(name)
+
+leaflet(cambridge_nhoods) %>%
+  addProviderTiles(providers$Stamen.TonerLite) %>%
+  addPolygons(highlightOptions = highlightOptions(fillColor = "yellow", 
+                                                  fillOpacity = 1),
+              label = ~name, 
+              weight = 1) 
+```
+
+Now I'll manually add the case rates from that map (this is the most tedious, error-prone approach possible to loading the data, but I've been unable to find the data for download, and it's only 13 points, so it's fine). 
+
+Then, I'll add labels and colors to the map to indicate the case rate in each neighborhood.
+
+```{r}
+cambridge_nhoods <- cambridge_nhoods %>%
+  mutate(case_rate = c(166, 66, 91, 25, 99, 72, 144, 
+                       164, 45, 90, 11, 73, 114))
+
+cambridge_nhoods$label <- 
+  paste(cambridge_nhoods$name, "<br>", 
+        cambridge_nhoods$case_rate, " cases per 10,000 residents") %>% 
+  lapply(htmltools::HTML)
+
+bins <- seq(min(cambridge_nhoods$case_rate),
+            max(cambridge_nhoods$case_rate), by = 1)
+pal <- colorNumeric("viridis", 
+                    domain = cambridge_nhoods$case_rate,
+                    na.color = "#00000000")
+
+leaflet(cambridge_nhoods) %>%
+  addProviderTiles(providers$Stamen.TonerLite) %>%
+  addPolygons(highlightOptions = highlightOptions(fillOpacity = 1),
+              label = ~label,
+              fillColor = ~pal(case_rate),
+              weight = 1, color = "black") %>% 
+  addLegend(pal = pal, 
+            values = ~case_rate,
+            bins = 3,
+            opacity = 0.7, title = "Cases per 10,000 residents",
+            position = "topright")
+```
+
+From this map, it appears that there are sudden changes in COVID risk at neighborhood boundaries. For example, it might appear that when you cross Mass Ave to go from The Port to Cambridgeport, the COVID risk decreases from 166 in 100,0000 to 99 in 100,000. In reality, COVID risk probably varies more smoothly. 
+
+## Neighborhood-level rates as points
+
+Let's assume that the average COVID rate for a neighborhood is most likely to representative of the very middle of the neighborhood (the centroid), but that as you move closer to the edges of the neighborhood, it starts to look more like the adjacent neighborhoods. 
+
+If that's more or less what's happening, if might make sense to represent the COVID case rates as points rather than polygons. Note that to calculate centroids, I'm transforming the polygons to a projected coordinate system (Massachusetts State Plane), but then immediately transforming the points back to WGS84 lat/lon coordinates (4326) so that it will display on the leaflet map correctly.
+
+```{r, warning = FALSE}
+MA_state_plane <- "+proj=lcc +lat_1=41.71666666666667 +lat_2=42.68333333333333 +lat_0=41 +lon_0=-71.5 +x_0=200000 +y_0=750000 +ellps=GRS80 +units=m +no_defs "
+
+WGS84 <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+
+nhood_points <- st_centroid(
+  st_transform(cambridge_nhoods, crs = MA_state_plane)) %>%
+  st_transform(WGS84)
+
+leaflet(nhood_points) %>%
+  addProviderTiles(providers$Stamen.TonerLite) %>%
+  addCircles(label = ~label,
+             fillColor = ~pal(case_rate),
+             stroke = FALSE, 
+             radius = 50, 
+             fillOpacity = 1) %>% 
+  addLegend(pal = pal, 
+            values = ~case_rate,
+            bins = 3,
+            opacity = 0.7, title = "Cases per 10,000 residents",
+            position = "topright")
+```
+
+## Interpolation
+
+Now, we can use raster interpolation to make a guess (and interpolation _is_ just fancy guessing) about what's happening between those points.
+
+The raster functions, including for spatial interpolation, work with an older data format (Spatial* - or sp) that what we've been working with (Simple Features - or sf). That's fine because it's pretty easy to convert back and forth. While I'm at it, I'm going to convert my points  and polygons to state plane coordinates (so that the distance measurements used in the raster interpolation will be accurate).
+
+```{r, warning=FALSE}
+nhood_pts_sp <- nhood_points %>%
+  st_transform(MA_state_plane) %>%
+  as_Spatial()
+
+nhood_poly_sp <- cambridge_nhoods %>%
+  st_transform(MA_state_plane) %>%
+  as_Spatial()
+```
+
+
+Now, we need to create an empty raster that covers the area of Cambridge (the extent of the neighborhoods polygon) with a resolution of 10 meters (each cell represents 10 meters).
+
+```{r}
+cambridge_raster <- raster(nhood_poly_sp, res=10)
+```
+
+Now I'll create a raster showing the variation in COVID rates using the inverse-distance weighting method. The first two lines below do the raster interpolation. The next line clips the raster layer to the extents of the neighborhood 
+
+```{r, warning=FALSE, message=FALSE, results='hide'}
+gs <- gstat(formula=case_rate~1, locations=nhood_pts_sp)
+idw_interp <- interpolate(cambridge_raster, gs)
+
+idw_interp_clip <- mask(idw_interp, nhood_poly_sp)
+```
+
+Now we can show this raster layer on a map.
+
+```{r, warning=FALSE}
+leaflet(nhood_points) %>%
+  addProviderTiles(providers$Stamen.TonerLite) %>%
+  addRasterImage(idw_interp_clip, colors = pal, opacity = 0.8) %>% 
+  addLegend(pal = pal, 
+            values = ~case_rate,
+            bins = 3,
+            opacity = 0.7, title = "Estimated cases per<br>10,000 residents",
+            position = "topright")
+
+```
+
