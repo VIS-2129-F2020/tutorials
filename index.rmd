@@ -94,3 +94,7 @@ For each week's assignment, I've posted (or will have posted) one or more video 
 ## Week 8: Interactive maps
 
 [Written tutorial](https://vis-2129-f2020.github.io/tutorials/Week8.html){target="_blank"}
+
+## Week 9: Raster interpolation
+
+[Written tutorial](https://vis-2129-f2020.github.io/tutorials/Week9){target="_blank"}
