@@ -1,0 +1,116 @@
+
+# Interactive maps
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(sf)
+library(leaflet)
+library(htmltools)
+library(htmlwidgets)
+library(rnaturalearth)
+```
+
+In this tutorial, I will download the world countries, color them based on their economic classification (column "economy" in the dataframe world), and show name, population and GDP per capita.
+
+```{r}
+world <- ne_countries(returnclass = "sf") %>% filter(name != "Antarctica")
+```
+
+Here you can find available basemaps in leaflet. Some of them will not work in R http://leaflet-extras.github.io/leaflet-providers/preview/.
+
+This is how you can color polygons based on a specific value, similar to fill in ggplot.
+
+```{r, warning=FALSE}
+# Here, I'll create a color palette. This website gives a detailed tutorial on how to do that, for categorical and continuous variables.  https://rstudio.github.io/leaflet/colors.html
+
+color_bins <- colorFactor(heat.colors(7), world$economy)
+
+world_map1 <- leaflet(world) %>%
+  addProviderTiles("Stamen.TonerLite") %>%
+  addPolygons(fillColor = color_bins(world$economy), stroke = FALSE)
+
+world_map1
+```
+
+### Highlights, dumb labels and popups
+
+```{r, warning=FALSE}
+# If you add a string in label or popup, it will display that same string for every polygon.
+
+world_map2 <- leaflet(world) %>%
+  addProviderTiles("Stamen.TonerLite") %>%
+  addPolygons(fillColor = color_bins(world$economy), stroke = FALSE,
+              highlightOptions = highlightOptions(fillColor = "red", fillOpacity = 0.5),
+              label = "This is a country",
+              popup = "That's all I know")
+world_map2
+```
+
+### Smart labels and popups 
+
+
+```{r, warning=FALSE}
+# If you want to display info based on the values of different columns, you can simply call that column with label = dataframe$column
+world_map3 <- leaflet(world) %>%
+  addProviderTiles("Stamen.TonerLite") %>%
+  addPolygons(fillColor = color_bins(world$economy), stroke = FALSE,
+              highlightOptions = highlightOptions(fillColor = "red", fillOpacity = 0.5),
+              label = world$name,
+              popup = paste("Country:", world$name, "<br/>",
+                            "Population:", world$pop_est/1000000,"M", "<br/>",
+                            "GDP per capita: $", world$gdp_md_est/world$pop_est*1000000))
+                           
+world_map3
+```
+
+
+### Same, but with pretty numbers in popups
+
+```{r, warning=FALSE}
+
+world_map3 <- leaflet(world) %>%
+  addProviderTiles("Stamen.TonerLite") %>%
+  addPolygons(fillColor = color_bins(world$economy), stroke = FALSE,
+              highlightOptions = highlightOptions(fillColor = "red", fillOpacity = 0.5),
+              label = world$name,
+              popup = paste("Country:", world$name, "<br/>",
+                            "Population:", round(world$pop_est/1000000,1),"M", "<br/>",
+                            "GDP per capita: $", format(round(world$gdp_md_est/world$pop_est*1000000),big.mark=",")))
+                           
+world_map3
+```
+
+
+### Map bounds, zoom controls and legend
+
+```{r, warning=FALSE}
+# Sometimes it makes sense to limit the extent of the map, especially if your region is small (a city). Also, it's a good practice to limit zooming in and out. 
+
+world_map4 <- leaflet(world,
+                      options = leafletOptions(minZoom = 2, maxZoom = 4)) %>%
+  addProviderTiles("Stamen.TonerLite") %>%
+  addPolygons(fillColor = color_bins(world$economy), stroke = FALSE,
+              highlightOptions = highlightOptions(fillColor = "red", 
+                                                  fillOpacity = 0.5),
+              label = world$name,
+              popup = paste("Country:", world$name, "<br/>",
+                            "Population:", round(world$pop_est/1000000,1),"M", "<br/>",
+                            "GDP per capita: $", format(round(world$gdp_md_est/world$pop_est*1000000),big.mark=","),  "<br/>")) %>%
+  setMaxBounds( lng1 = -170,
+                lat1 = -65,
+                lng2 = 180,
+                lat2 = 80) %>%
+  addLegend(pal = color_bins,
+             values = world$economy,
+             title = "Economic Development",
+            opacity = 1)
+
+world_map4
+```
+
+
+```{r}
+saveWidget(world_map4, file = "world_map4.html")
+```
+
+
