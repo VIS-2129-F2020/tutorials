@@ -58,7 +58,10 @@ Then, I'll add labels and colors to the map to indicate the case rate in each ne
 ```{r}
 cambridge_nhoods <- cambridge_nhoods %>%
   mutate(case_rate = c(166, 66, 91, 25, 99, 72, 144, 
-                       164, 45, 90, 11, 73, 114))
+                       164, 45, 90, 11, 73, 114),
+         image = c("https://en.wikipedia.org/wiki/The_Port,_Cambridge#/media/File:Clement_G._Morgan_Park,_Cambridge_MA.jpg",
+                   "https://en.wikipedia.org/wiki/Riverside,_Cambridge#/media/File:Memorial_Drive,_Riverside,_Cambridge_MA.jpg", 
+                   "https://en.wikipedia.org/wiki/Harvard_University#/media/File:HarvardYard.jpg"))
 
 cambridge_nhoods$label <- 
   paste(cambridge_nhoods$name, "<br>", 
