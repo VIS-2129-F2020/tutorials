@@ -126,3 +126,5 @@ For each week's assignment, I've posted (or will have posted) one or more video 
 [Video tutorial 5: Layering 3D and 2D images in Illustrator](https://harvard.zoom.us/rec/share/LdeSTtBBbRNV4dSkqSMQS-5e8gJYfkeEl9jXG7iq2nze6bWK4_2QZzCutd_cyECZ.DfSQJsFah9K_nV0O?startTime=1605035624000){target="_blank"}
 
 [SketchUp reference by David Gamble](https://vis-2129-f2020.github.io/tutorials/SketchUp-pointers.pdf){target="_blank"}
+
+[Shapefile to Sketchup Tutorial](https://vis-2129-f2020.github.io/tutorials/Week11.pdf){target="_blank"}
